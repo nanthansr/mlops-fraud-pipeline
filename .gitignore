@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env
+venv/
+.venv/
+*.pyc
+
+# Data — never commit raw data
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# Models — tracked by MLflow, not git
+models/
+*.pkl
+*.joblib
+*.pt
+*.h5
+
+# MLflow
+mlruns/
+mlartifacts/
+
+# Notebooks checkpoints
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Secrets — NEVER commit these
+.env
+*.pem
+*.key
+aws-credentials
+
+# Logs
+*.log
+logs/
+
+# Personal — not for portfolio repo
+CLAUDE_PROJECT_PROMPT.md
+scripts/study_log.py
+
+# Local config
+.env
+.env.local
+config.local.yml

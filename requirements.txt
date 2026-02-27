@@ -1,0 +1,25 @@
+# ── API ──
+fastapi==0.111.0
+uvicorn==0.29.0
+pydantic==2.7.0
+
+# ── ML ──
+scikit-learn==1.4.2
+xgboost==2.0.3
+pandas==2.2.2
+numpy==1.26.4
+joblib==1.4.0
+imbalanced-learn==0.12.2   # SMOTE for class imbalance
+
+# ── Experiment tracking ──
+mlflow==2.13.0
+
+# ── Monitoring ──
+prometheus-fastapi-instrumentator==7.0.0
+
+# ── Testing ──
+pytest==8.2.0
+httpx==0.27.0               # async test client for FastAPI
+
+# ── Data download ──
+kaggle==1.6.14
