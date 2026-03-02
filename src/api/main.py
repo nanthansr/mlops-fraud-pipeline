@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import BaseModel
@@ -9,20 +10,10 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(
-    title="Credit Card Fraud Detection API",
-    description="MLOps pipeline — predicts whether a transaction is fraudulent",
-    version="0.1.0"
-)
-
-# Expose /metrics endpoint for Prometheus to scrape
-Instrumentator().instrument(app).expose(app)
-
 # ── Model loading ──
 MODEL_PATH = os.getenv("MODEL_PATH", "models/model.joblib")
 model = None
 
-@app.on_event("startup")
 def load_model():
     global model
     if os.path.exists(MODEL_PATH):
@@ -30,6 +21,21 @@ def load_model():
         logger.info(f"✅ Model loaded from {MODEL_PATH}")
     else:
         logger.warning(f"⚠️  No model at {MODEL_PATH} — run src/model/train.py first")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    load_model()
+    yield
+
+app = FastAPI(
+    title="Credit Card Fraud Detection API",
+    description="MLOps pipeline — predicts whether a transaction is fraudulent",
+    version="0.1.0",
+    lifespan=lifespan
+)
+
+# Expose /metrics endpoint for Prometheus to scrape
+Instrumentator().instrument(app).expose(app)
 
 
 # ── Request / Response schemas ──
