@@ -12,7 +12,7 @@ COPY src/ ./src/
 
 # Model gets mounted as a volume in development,
 # baked in for production builds
-COPY models/ ./models/ 2>/dev/null || true
+COPY models/ ./models/
 
 EXPOSE 8000
 

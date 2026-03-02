@@ -46,8 +46,8 @@ To fix:
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     print(f"Downloading {DATASET} to {OUTPUT_DIR}...")
 
-    from kaggle.api.kaggle_api_extended import KaggleApiExtended
-    api = KaggleApiExtended()
+    from kaggle.api.kaggle_api_extended import KaggleApi
+    api = KaggleApi()
     api.authenticate()
     api.dataset_download_files(DATASET, path=OUTPUT_DIR, unzip=True)
 
