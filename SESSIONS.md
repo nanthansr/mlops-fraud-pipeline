@@ -82,17 +82,24 @@
 - Tested `/predict` endpoint with two cases: legit ($149.62 → 0.18% fraud) and known fraud pattern → 99.76% fraud
 
 **Files changed**:
-- `models/model.joblib` — created (trained XGBoost model)
-- `models/metrics.json` — created (ROC-AUC: 0.9747, PR-AUC: 0.8510)
+- `models/model.joblib` — created (trained XGBoost model, gitignored)
+- `models/metrics.json` — created (ROC-AUC: 0.9747, PR-AUC: 0.8510, gitignored)
+- `src/api/main.py` — replaced deprecated `@app.on_event("startup")` with `lifespan` handler
+- `pytest.ini` — created with `pythonpath = .` so `pytest tests/ -v` works from any terminal
+- `Dockerfile` + `docker-compose.yml` — updated (Dockerized Stage 1)
+- `scripts/download_data.py` — kaggle v2 fix committed
+- `.claude/commands/wakeup.md` + `wrapup.md` — session management commands committed
+- `scripts/devlog.py` — committed
 
 **Decisions made**:
 - `scale_pos_weight=577` used to handle 577:1 class imbalance (XGBoost native approach over SMOTE)
 - PR-AUC chosen as primary metric over ROC-AUC — more meaningful for imbalanced datasets
+- `lifespan` handler over `@app.on_event` — future-proof FastAPI pattern
+- Branch strategy: use feature branches from Stage 2 onwards (`stage-2-cicd` etc.) to demonstrate proper CI/CD workflow
 
 **Blockers**:
-- `use_label_encoder` param deprecated in newer XGBoost — causes a UserWarning (non-breaking, can clean up)
-- Venv still partially initialized — only individual packages installed, not full `requirements.txt`
+- Venv still partially initialized — individual packages installed manually, `pip install -r requirements.txt` not run as a full init step
 
-**Next session**: Write pytest tests for `/predict`, `/health`, and `/` endpoints in `tests/` — then run them via `pytest tests/ -v`
+**Next session**: Create `stage-2-cicd` branch and begin GitHub Actions CI/CD pipeline (`.github/workflows/ci.yml`) — lint + test on push, then build and push Docker image to AWS ECR
 
 **Interview Q**: Why is PR-AUC a better evaluation metric than ROC-AUC for a dataset with 0.17% fraud cases — what does each metric actually measure?
