@@ -17,12 +17,16 @@
 
 ### What I built / did today
 - Verified dataset exists: `data/raw/creditcard.csv` (144MB, 284,807 rows)
-- Installed missing venv deps: `xgboost`, `imbalanced-learn`, `fastapi`, `uvicorn`, `prometheus-fastapi-instrumentator`
+- Installed missing venv deps: `xgboost`, `imbalanced-learn`, `fastapi`, `uvicorn`, `prometheus-fastapi-instrumentator`, `pytest`, `httpx`
 - Fixed `libomp.dylib` missing error blocking XGBoost on macOS — `brew install libomp`
-- Ran `src/model/train.py` — XGBoost model trained successfully in ~1s
-- Model saved to `models/model.joblib`, metrics to `models/metrics.json`
+- Ran `src/model/train.py` — XGBoost model trained successfully in ~1s (ROC-AUC: 0.9747, PR-AUC: 0.8510)
 - Launched FastAPI server via `uvicorn src.api.main:app --reload`
-- Tested `/predict` endpoint: legit transaction → 0.18% fraud probability; fraud pattern → 99.76%
+- Tested `/predict` endpoint manually: legit → 0.18% fraud; fraud pattern → 99.76%
+- Ran `pytest tests/ -v` — 5/5 passed
+- Fixed `pytest tests/ -v` `ModuleNotFoundError` — added `pytest.ini` with `pythonpath = .`
+- Fixed deprecated `@app.on_event("startup")` — replaced with `lifespan` async context manager
+- Dockerized Stage 1 (done in separate terminal)
+- Committed and pushed all Stage 1 work to `main` (commit `8bab044`)
 
 ### Decisions made and WHY
 **Decision**: Use `scale_pos_weight=577` (XGBoost native) over SMOTE for class imbalance
@@ -47,12 +51,12 @@
 ---
 
 ### Blocked on
-**Blocked on**: Nothing — clean session. No tests written yet for the API.
+**Blocked on**: Nothing — Stage 1 fully complete and pushed.
 
 ---
 
 ### Next session
-**Next action**: Write pytest tests for `/predict`, `/health`, and `/` endpoints in `tests/` — run via `pytest tests/ -v`
+**Next action**: Create `stage-2-cicd` branch and build `.github/workflows/ci.yml` — lint + test on push, then build and push Docker image to AWS ECR
 
 ---
 
