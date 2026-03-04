@@ -54,7 +54,7 @@ jobs:
           kaggle datasets download -d mlg-ulb/creditcardfraud -p data/raw --unzip
 
       - name: Train model
-        run: python src/train.py
+        run: python src/model/train.py
 
       - name: Build Docker image
         run: docker build -t fraud-detection-app .

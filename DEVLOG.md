@@ -5,6 +5,43 @@
 
 <!-- ENTRIES BELOW — newest at top -->
 
+## 2026-03-04 Wednesday
+**Stage**: Stage 2 — CI/CD (GitHub Actions → AWS ECR → ECS)
+**Branch**: `main`
+**Last commit**: 1009a57 devlog: 2026-03-02 session notes final
+
+### Picked up from last session
+> Create `stage-2-cicd` branch and build `.github/workflows/ci.yml` — lint + test on push, then build and push Docker image to AWS ECR
+
+---
+
+### What I built / did today
+-
+
+### Decisions made and WHY
+**Decision**:
+**Why**:
+**Alternatives considered**:
+
+---
+
+### What broke
+**Problem**:
+**Error**:
+**Fix / Status**:
+
+---
+
+### Blocked on
+**Blocked on**:
+
+---
+
+### Next session
+**Next action**:
+
+---
+
 ## 2026-03-02 Monday
 **Stage**: Stage 1 — Foundation (model + FastAPI + Docker)
 **Branch**: `main`

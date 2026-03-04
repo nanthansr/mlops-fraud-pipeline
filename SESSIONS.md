@@ -103,3 +103,24 @@
 **Next session**: Create `stage-2-cicd` branch and begin GitHub Actions CI/CD pipeline (`.github/workflows/ci.yml`) — lint + test on push, then build and push Docker image to AWS ECR
 
 **Interview Q**: Why is PR-AUC a better evaluation metric than ROC-AUC for a dataset with 0.17% fraud cases — what does each metric actually measure?
+
+## Session 2026-03-04 HH:MM
+
+**Pre-session state**:
+- Branch: `main`
+- Last commit: `1009a57 devlog: 2026-03-02 session notes final`
+- Modified files: none
+- Untracked files: none
+
+**Picked up from last session**: Create `stage-2-cicd` branch and begin GitHub Actions CI/CD pipeline (`.github/workflows/ci.yml`) — lint + test on push, then build and push Docker image to AWS ECR
+
+**Goal**: [to be filled by user]
+
+**Work log**:
+<!-- appended during session -->
+
+**Files changed**: <!-- filled at /wrapup -->
+**Decisions made**: <!-- filled at /wrapup -->
+**Blockers**: <!-- filled at /wrapup -->
+**Next session**: <!-- filled at /wrapup -->
+**Interview Q**: <!-- filled at /wrapup -->
