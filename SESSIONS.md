@@ -114,13 +114,27 @@
 
 **Picked up from last session**: Create `stage-2-cicd` branch and begin GitHub Actions CI/CD pipeline (`.github/workflows/ci.yml`) — lint + test on push, then build and push Docker image to AWS ECR
 
-**Goal**: [to be filled by user]
+**Goal**: Stage 2 CI/CD — get GitHub Actions pipeline passing (test + build jobs)
 
 **Work log**:
-<!-- appended during session -->
+- Created `.github/workflows/ci-cd.yml` with `test` job (pytest) and `build` job (kaggle download → train → docker build)
+- Fixed wrong dataset URL in ci-cd.yml
+- Fixed `train.py` path (`src/model/train.py`)
+- Pushed to `main` — both GitHub Actions jobs passing ✅
+- ECR push job scaffolded and commented out (ready for AWS secrets)
 
-**Files changed**: <!-- filled at /wrapup -->
-**Decisions made**: <!-- filled at /wrapup -->
-**Blockers**: <!-- filled at /wrapup -->
-**Next session**: <!-- filled at /wrapup -->
-**Interview Q**: <!-- filled at /wrapup -->
+**Files changed**:
+- `.github/workflows/ci-cd.yml` — created (test + build jobs)
+- `README.md` — added CI status badge
+
+**Decisions made**:
+- Train model inside CI `build` job so Docker image has a baked-in model
+- ECR push job commented out (not deleted) — scaffold ready, pending AWS secrets
+- Used `main` branch directly for Stage 2 (no feature branch needed at this scale)
+
+**Blockers**:
+- AWS credentials not configured — ECR push step is on hold until secrets added to GitHub repo settings
+
+**Next session**: Configure AWS credentials (ECR repo + IAM user + GitHub secrets `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) and uncomment the ECR push job in ci-cd.yml
+
+**Interview Q**: In your CI pipeline, why do you train the model inside the build job rather than committing the model file to git?

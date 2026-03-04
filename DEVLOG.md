@@ -8,7 +8,7 @@
 ## 2026-03-04 Wednesday
 **Stage**: Stage 2 — CI/CD (GitHub Actions → AWS ECR → ECS)
 **Branch**: `main`
-**Last commit**: 1009a57 devlog: 2026-03-02 session notes final
+**Last commit**: dd52d92 fixed path for train.py
 
 ### Picked up from last session
 > Create `stage-2-cicd` branch and build `.github/workflows/ci.yml` — lint + test on push, then build and push Docker image to AWS ECR
@@ -16,29 +16,41 @@
 ---
 
 ### What I built / did today
--
+- Created `.github/workflows/ci-cd.yml` with two jobs: `test` (pytest) and `build` (download dataset → train model → docker build)
+- Fixed dataset download URL in ci-cd.yml
+- Fixed path issue for `train.py` in CI
+- Pushed to `main` — GitHub Actions ran and both `test` and `build` jobs passed ✅
+- ECR push job scaffolded but commented out (ready for when AWS credentials are configured)
 
 ### Decisions made and WHY
-**Decision**:
-**Why**:
-**Alternatives considered**:
+**Decision**: Run dataset download + model training inside the CI `build` job
+**Why**: Docker image needs a trained model baked in; can't build a functional image without running train.py first
+**Alternatives considered**: Pre-baked model artifact in repo — rejected (model file is gitignored; large binary files don't belong in git)
+
+**Decision**: Keep ECR push job commented out rather than deleting it
+**Why**: Scaffold is ready; just needs AWS secrets wired up. Commenting preserves intent without breaking the working pipeline.
+**Alternatives considered**: Separate branch for ECR work — unnecessary; the commented block is clear enough
 
 ---
 
 ### What broke
-**Problem**:
-**Error**:
-**Fix / Status**:
+**Problem**: Dataset download step used wrong URL format in ci-cd.yml
+**Error**: Kaggle download failed in CI
+**Fix / Status**: Fixed — corrected dataset path in `kaggle datasets download` command
+
+**Problem**: `train.py` path incorrect in CI
+**Error**: `python train.py` not found
+**Fix / Status**: Fixed — changed to `python src/model/train.py`
 
 ---
 
 ### Blocked on
-**Blocked on**:
+**Blocked on**: AWS credentials not yet configured — ECR push step is commented out until secrets are added to GitHub repo settings
 
 ---
 
 ### Next session
-**Next action**:
+**Next action**: Configure AWS credentials (create ECR repo + IAM user + add GitHub secrets `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`) and uncomment the ECR push job in ci-cd.yml
 
 ---
 
