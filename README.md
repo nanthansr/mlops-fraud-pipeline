@@ -1,5 +1,7 @@
 # MLOps CI/CD Pipeline — Credit Card Fraud Detection
 
+![CI](https://github.com/nanthansr/mlops-fraud-pipeline/actions/workflows/ci-cd.yml/badge.svg)
+
 > End-to-end MLOps pipeline: train → serve → monitor → detect anomalies → alert
 
 ## What This Is
