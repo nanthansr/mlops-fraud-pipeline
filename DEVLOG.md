@@ -18,6 +18,10 @@
 ### What I built / did today
 - Reordered project stages: MLflow (Stage 3) before ECR/ECS deploy (Stage 2b)
 - Updated README to reflect new stage order with rationale
+- Updated `ci-cd.yml`: added OIDC auth (`permissions: id-token: write`), fixed `AWS_REGION` from hardcoded `us-east-1` → secret, updated Stage 2b commented block to use role-based auth
+- Updated `docker-compose.yml`: MLflow service now installs boto3 and uses S3 as artifact backend (`--default-artifact-root s3://...`); mounts `~/.aws` for local AWS auth
+- Updated `train.py`: added MLflow tracking (params + metrics logged), model registered to MLflow registry as `fraud-detector`, artifacts pushed to S3; tracking URI read from env var with localhost fallback
+- Added Stage 2b note in `train.py` — backend store must move to shared location before CI can query registry
 
 ### Decisions made and WHY
 **Decision**: Do MLflow (Stage 3) before ECR/ECS deploy (Stage 2b)

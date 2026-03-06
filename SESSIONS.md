@@ -154,6 +154,9 @@
 **Work log**:
 - Decided to do MLflow (Stage 3) before ECR/ECS deploy — model must be versioned before it's deployed
 - Updated README: reordered stages, marked Stage 1 + Stage 2a complete, added rationale note
+- Updated `ci-cd.yml`: OIDC auth, `AWS_REGION` secret fix, Stage 2b block updated for MLflow registry fetch
+- Updated `docker-compose.yml`: MLflow → S3 artifact backend, boto3 install, `~/.aws` mount
+- Updated `train.py`: MLflow tracking + model registration wired in; tracking URI via env var; Stage 2b backend store limitation noted in comment
 
 **Files changed**: <!-- filled at /wrapup -->
 **Decisions made**: <!-- filled at /wrapup -->
