@@ -12,7 +12,7 @@ joblib==1.4.0
 imbalanced-learn==0.12.2   # SMOTE for class imbalance
 
 # ── Experiment tracking ──
-mlflow==2.13.0
+mlflow==3.10.1
 
 # ── Monitoring ──
 prometheus-fastapi-instrumentator==7.0.0
