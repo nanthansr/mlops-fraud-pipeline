@@ -138,3 +138,25 @@
 **Next session**: Configure AWS credentials (ECR repo + IAM user + GitHub secrets `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) and uncomment the ECR push job in ci-cd.yml
 
 **Interview Q**: In your CI pipeline, why do you train the model inside the build job rather than committing the model file to git?
+
+## Session 2026-03-06 HH:MM
+
+**Pre-session state**:
+- Branch: `main`
+- Last commit: `28ffcb7 devlog: 2026-03-04 session notes`
+- Modified files: none
+- Untracked files: none
+
+**Picked up from last session**: Configure AWS credentials (ECR repo + IAM user + GitHub secrets `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) and uncomment the ECR push job in ci-cd.yml
+
+**Goal**: Decide and plan Stage 3 — MLflow before ECR/ECS
+
+**Work log**:
+- Decided to do MLflow (Stage 3) before ECR/ECS deploy — model must be versioned before it's deployed
+- Updated README: reordered stages, marked Stage 1 + Stage 2a complete, added rationale note
+
+**Files changed**: <!-- filled at /wrapup -->
+**Decisions made**: <!-- filled at /wrapup -->
+**Blockers**: <!-- filled at /wrapup -->
+**Next session**: <!-- filled at /wrapup -->
+**Interview Q**: <!-- filled at /wrapup -->

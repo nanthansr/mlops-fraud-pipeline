@@ -28,12 +28,17 @@ Built cross-platform — runs identically on Mac and Windows via Docker.
 
 ## Project Stages
 
-- [ ] **Stage 1** — Foundation: model + FastAPI + Docker (local)
-- [ ] **Stage 2** — CI/CD: GitHub Actions → AWS ECR → ECS deploy
+- [x] **Stage 1** — Foundation: model + FastAPI + Docker (local)
+- [x] **Stage 2a** — CI/CD: GitHub Actions — lint + test + docker build
 - [ ] **Stage 3** — MLflow: experiment tracking + model registry
+- [ ] **Stage 2b** — CI/CD: ECR push + ECS deploy (wired to MLflow registry)
 - [ ] **Stage 4** — Monitoring: Prometheus metrics + Grafana dashboard
 - [ ] **Stage 5** — AIOps: anomaly detection on build times + model drift alerts
 - [ ] **Stage 6** — Polish: clean README, architecture diagram, demo video, LinkedIn post
+
+> **Why Stage 2b comes after Stage 3**: ECR/ECS deploy is deferred until MLflow is in place.
+> CI will pull a registered, versioned model from MLflow registry rather than re-training blind on every push.
+> This is the industry-standard order: track → register → deploy.
 
 ## Running Locally
 

@@ -5,6 +5,44 @@
 
 <!-- ENTRIES BELOW — newest at top -->
 
+## 2026-03-06 Friday
+**Stage**: Stage 2 — CI/CD (GitHub Actions → AWS ECR → ECS)
+**Branch**: `main`
+**Last commit**: 28ffcb7 devlog: 2026-03-04 session notes
+
+### Picked up from last session
+> Configure AWS credentials (create ECR repo + IAM user + add GitHub secrets `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`) and uncomment the ECR push job in ci-cd.yml
+
+---
+
+### What I built / did today
+- Reordered project stages: MLflow (Stage 3) before ECR/ECS deploy (Stage 2b)
+- Updated README to reflect new stage order with rationale
+
+### Decisions made and WHY
+**Decision**: Do MLflow (Stage 3) before ECR/ECS deploy (Stage 2b)
+**Why**: Deploying to ECS without a model registry means shipping an unversioned, untracked model. MLflow registry lets CI pull a known, approved model version — which is what "preventing a bad model from deploying" actually means in production.
+**Alternatives considered**: ECR/ECS first — rejected because the CI pipeline would need to be rebuilt anyway once MLflow is added; doing it in the right order avoids rework
+
+---
+
+### What broke
+**Problem**:
+**Error**:
+**Fix / Status**:
+
+---
+
+### Blocked on
+**Blocked on**:
+
+---
+
+### Next session
+**Next action**:
+
+---
+
 ## 2026-03-04 Wednesday
 **Stage**: Stage 2 — CI/CD (GitHub Actions → AWS ECR → ECS)
 **Branch**: `main`
