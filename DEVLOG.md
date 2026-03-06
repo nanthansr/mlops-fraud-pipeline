@@ -38,12 +38,12 @@
 ---
 
 ### Blocked on
-**Blocked on**:
+**Blocked on**: MLflow backend store is local — CI cannot query the model registry until it's moved to a shared location (S3-backed or hosted). Known Stage 2b problem, noted in code.
 
 ---
 
 ### Next session
-**Next action**:
+**Next action**: Promote `fraud-detector` to `@champion` alias in MLflow UI if not done, then begin Stage 2b — move MLflow backend store to shared location and uncomment ECR push job in ci-cd.yml
 
 ---
 

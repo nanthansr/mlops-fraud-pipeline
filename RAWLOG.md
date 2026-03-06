@@ -83,4 +83,6 @@ MLflow has two storage concerns — run metadata (params, metrics) goes to `--ba
 **Interesting tool or concept I used:**
 OIDC auth for GitHub Actions — instead of storing AWS access keys as secrets, GitHub issues a short-lived token per job and AWS verifies it directly. Keys expire when the job ends. No credentials stored anywhere. Way cleaner than the old access key approach.
 
+Also learned: MLflow 3.x dropped the Staging/Production stage dropdown entirely. Now you assign aliases like `champion` to a model version. To load it in code: `mlflow.xgboost.load_model("models:/fraud-detector@champion")`. Cleaner, more flexible.
+
 ---

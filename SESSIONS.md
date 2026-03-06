@@ -158,8 +158,25 @@
 - Updated `docker-compose.yml`: MLflow → S3 artifact backend, boto3 install, `~/.aws` mount
 - Updated `train.py`: MLflow tracking + model registration wired in; tracking URI via env var; Stage 2b backend store limitation noted in comment
 
-**Files changed**: <!-- filled at /wrapup -->
-**Decisions made**: <!-- filled at /wrapup -->
-**Blockers**: <!-- filled at /wrapup -->
-**Next session**: <!-- filled at /wrapup -->
-**Interview Q**: <!-- filled at /wrapup -->
+**Files changed**:
+- `.github/workflows/ci-cd.yml` — OIDC auth, AWS_REGION secret fix, Stage 2b block updated + alias comment
+- `docker-compose.yml` — MLflow → S3 artifact backend, boto3 install, `~/.aws` mount, upgraded to v3.10.1
+- `src/model/train.py` — MLflow tracking + model registration wired in; tracking URI via env var; Stage 2b notes
+- `requirements.txt` — MLflow pinned to 3.10.1
+- `README.md` — stages reordered, Stage 1 + 2a marked complete
+- `RAWLOG.md` — created, all sessions backfilled
+- `CLAUDE.md` — created with ground rules
+
+**Decisions made**:
+- MLflow before ECR/ECS — can't deploy an unversioned model
+- Backend store stays local for now (S3 artifact root only) — Stage 2b limitation noted
+- Tracking URI via `os.getenv()` — CI can override without touching code
+- MLflow 3.x alias `@champion` replaces old `Production` stage — `models:/fraud-detector@champion`
+- OIDC auth over IAM access keys — short-lived tokens, nothing stored
+
+**Blockers**:
+- MLflow backend store is local — CI cannot query the registry until it's moved to a shared location (Stage 2b problem)
+
+**Next session**: Promote `fraud-detector` model version to `@champion` alias in MLflow UI (if not done), then begin Stage 2b — move MLflow backend store to shared location and uncomment ECR push job in ci-cd.yml
+
+**Interview Q**: MLflow 3.x removed Staging/Production stages — what replaced them, and how would you reference the champion model version in code?
