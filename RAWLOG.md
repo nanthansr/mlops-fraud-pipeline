@@ -72,15 +72,15 @@ GitHub Actions secrets — you store sensitive stuff like `KAGGLE_KEY` in the re
 ## 2026-03-06
 
 **What I worked on:**
-Planning session — figured out the right order to do things before diving into MLflow.
+Planned and wired in Stage 3 MLflow — updated the CI yaml, docker-compose, and train.py to actually track experiments and push model artifacts to S3.
 
 **What broke or confused me:**
-Nothing broke, but I was about to do AWS/ECR next because that's what the README said. Turns out that's the wrong order — you shouldn't deploy a model before you have a way to version and track it. Would've had to redo the CI pipeline later anyway.
+Almost made a mistake doing ECR/ECS before MLflow — would've deployed an unversioned model and had to redo the CI pipeline later. Also realised the MLflow backend store (where the registry lives) stays local for now, which means CI can't query it in Stage 2b. Not a problem today but will bite later.
 
 **What I figured out or decided:**
-MLflow first, ECR/ECS after. The right flow is: track experiment → register model → deploy registered model. Doing deploy first means you're shipping an unknown blob with no audit trail. Updated README to reflect the new order.
+MLflow has two storage concerns — run metadata (params, metrics) goes to `--backend-store-uri`, model files go to `--default-artifact-root`. Split them: metadata stays local, artifacts go to S3. Also made the tracking URI an env var instead of hardcoded so CI can override it later without touching the code.
 
 **Interesting tool or concept I used:**
-MLflow Model Registry — it's not just logging metrics, it has a promotion workflow: `None → Staging → Production`. CI can be set up to only deploy models that are in `Production` state, which is how you gate bad models from shipping.
+OIDC auth for GitHub Actions — instead of storing AWS access keys as secrets, GitHub issues a short-lived token per job and AWS verifies it directly. Keys expire when the job ends. No credentials stored anywhere. Way cleaner than the old access key approach.
 
 ---
