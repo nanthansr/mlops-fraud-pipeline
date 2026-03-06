@@ -72,17 +72,15 @@ GitHub Actions secrets — you store sensitive stuff like `KAGGLE_KEY` in the re
 ## 2026-03-06
 
 **What I worked on:**
-Planned and wired in Stage 3 MLflow — updated the CI yaml, docker-compose, and train.py to actually track experiments and push model artifacts to S3.
+Big AWS setup day + wired MLflow into the full pipeline. Provisioned S3, set up OIDC auth for GitHub Actions, created the IAM role, then updated ci-cd.yml, docker-compose, and train.py. Ran the full loop end to end — trained model, saw the run in MLflow UI, confirmed artifact path points to S3, promoted to `@champion`.
 
 **What broke or confused me:**
-Almost made a mistake doing ECR/ECS before MLflow — would've deployed an unversioned model and had to redo the CI pipeline later. Also realised the MLflow backend store (where the registry lives) stays local for now, which means CI can't query it in Stage 2b. Not a problem today but will bite later.
+MLflow version mismatch — local venv had 3.10.1, Docker image was 2.13.0. The new `log_model` in 3.x calls a `/logged-models` API endpoint that doesn't exist on the 2.x server. Got a 404 and a cryptic traceback. Fixed by upgrading the Docker image to match local. Also: almost did ECR/ECS before MLflow — would've shipped an unversioned model and had to redo the CI pipeline later.
 
 **What I figured out or decided:**
-MLflow has two storage concerns — run metadata (params, metrics) goes to `--backend-store-uri`, model files go to `--default-artifact-root`. Split them: metadata stays local, artifacts go to S3. Also made the tracking URI an env var instead of hardcoded so CI can override it later without touching the code.
+OIDC is the right way to auth GitHub Actions with AWS — no stored keys, short-lived tokens per job. Also figured out MLflow's two storage layers: `--backend-store-uri` for run metadata (stays local), `--default-artifact-root` for model files (goes to S3). MLflow 3.x dropped Staging/Production stages — now use aliases. `@champion` is the new Production.
 
 **Interesting tool or concept I used:**
-OIDC auth for GitHub Actions — instead of storing AWS access keys as secrets, GitHub issues a short-lived token per job and AWS verifies it directly. Keys expire when the job ends. No credentials stored anywhere. Way cleaner than the old access key approach.
-
-Also learned: MLflow 3.x dropped the Staging/Production stage dropdown entirely. Now you assign aliases like `champion` to a model version. To load it in code: `mlflow.xgboost.load_model("models:/fraud-detector@champion")`. Cleaner, more flexible.
+IAM least-privilege — instead of giving the role S3FullAccess, scoped it to exactly 3 actions (GetObject, PutObject, ListBucket) on exactly one bucket. If the role ever gets compromised, blast radius is minimal.
 
 ---

@@ -149,34 +149,43 @@
 
 **Picked up from last session**: Configure AWS credentials (ECR repo + IAM user + GitHub secrets `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) and uncomment the ECR push job in ci-cd.yml
 
-**Goal**: Decide and plan Stage 3 — MLflow before ECR/ECS
+**Goal**: Stage 3 — provision AWS infrastructure, wire MLflow into the pipeline, complete full train→log→S3→registry loop
 
 **Work log**:
-- Decided to do MLflow (Stage 3) before ECR/ECS deploy — model must be versioned before it's deployed
-- Updated README: reordered stages, marked Stage 1 + Stage 2a complete, added rationale note
-- Updated `ci-cd.yml`: OIDC auth, `AWS_REGION` secret fix, Stage 2b block updated for MLflow registry fetch
-- Updated `docker-compose.yml`: MLflow → S3 artifact backend, boto3 install, `~/.aws` mount
-- Updated `train.py`: MLflow tracking + model registration wired in; tracking URI via env var; Stage 2b backend store limitation noted in comment
+- Provisioned S3 bucket `mlops-fraud-pipeline-artifacts-nanthan` in `us-east-2` for MLflow artifacts
+- Set up OIDC identity provider on AWS — GitHub Actions authenticates via short-lived STS tokens, no stored keys
+- Created IAM role `mlops-github-actions-role` with least-privilege inline policy scoped to specific bucket + 3 actions only (GetObject, PutObject, ListBucket) — removed broad S3FullAccess
+- Installed AWS CLI, configured local credentials via `mlops-local-dev` IAM user
+- Added GitHub secrets: `AWS_ROLE_ARN`, `AWS_REGION`
+- Reordered stages: MLflow (Stage 3) before ECR/ECS (Stage 2b) — right architectural order
+- Updated `ci-cd.yml`: `permissions: id-token: write` for OIDC, fixed hardcoded `us-east-1` → `${{ secrets.AWS_REGION }}`, Stage 2b commented block updated to `role-to-assume` pattern + `@champion` alias comment
+- Updated `docker-compose.yml`: MLflow uses S3 as artifact backend, boto3 installed in container, `~/.aws` mounted, upgraded image to v3.10.1
+- Updated `train.py`: MLflow experiment tracking added (params + metrics), model registered as `fraud-detector`, tracking URI via `os.getenv()`, Stage 2b backend store limitation noted in comment
+- Fixed MLflow version mismatch (local 3.10.1 vs Docker 2.13.0) — aligned both to 3.10.1
+- Ran full loop: `train.py` → MLflow logged run → artifact stored in S3 → model registered as `fraud-detector@champion` ✅
+- CI confirmed passing after all changes
+- Created `RAWLOG.md` (personal diary, all sessions backfilled) and `CLAUDE.md` (ground rules)
 
 **Files changed**:
-- `.github/workflows/ci-cd.yml` — OIDC auth, AWS_REGION secret fix, Stage 2b block updated + alias comment
-- `docker-compose.yml` — MLflow → S3 artifact backend, boto3 install, `~/.aws` mount, upgraded to v3.10.1
-- `src/model/train.py` — MLflow tracking + model registration wired in; tracking URI via env var; Stage 2b notes
+- `.github/workflows/ci-cd.yml` — OIDC auth, region secret fix, Stage 2b block updated
+- `docker-compose.yml` — MLflow S3 artifact backend, boto3, `~/.aws` mount, v3.10.1
+- `src/model/train.py` — MLflow tracking + registration, env var URI, Stage 2b note
 - `requirements.txt` — MLflow pinned to 3.10.1
 - `README.md` — stages reordered, Stage 1 + 2a marked complete
-- `RAWLOG.md` — created, all sessions backfilled
-- `CLAUDE.md` — created with ground rules
+- `RAWLOG.md` — created
+- `CLAUDE.md` — created
 
 **Decisions made**:
-- MLflow before ECR/ECS — can't deploy an unversioned model
-- Backend store stays local for now (S3 artifact root only) — Stage 2b limitation noted
-- Tracking URI via `os.getenv()` — CI can override without touching code
-- MLflow 3.x alias `@champion` replaces old `Production` stage — `models:/fraud-detector@champion`
-- OIDC auth over IAM access keys — short-lived tokens, nothing stored
+- OIDC over IAM access keys — no long-lived credentials, STS issues temporary creds per job
+- Least-privilege S3 policy — scoped to specific bucket and 3 actions, not S3FullAccess
+- MLflow aliases (`@champion`) over deprecated Staging/Production stages — removed in MLflow 2.13.0+
+- Backend store stays local for now — will move to EC2-hosted MLflow in Stage 2b (noted in code)
+- Tracking URI via `os.getenv()` — CI can override via secret without code changes
+- MLflow before ECR/ECS — registry must exist before CI can deploy a versioned model
 
 **Blockers**:
-- MLflow backend store is local — CI cannot query the registry until it's moved to a shared location (Stage 2b problem)
+- MLflow backend store is local (`./mlruns`) — CI cannot query the registry until it's moved to a shared location (EC2-hosted MLflow or S3-backed store). Known Stage 2b problem, noted in code.
 
-**Next session**: Promote `fraud-detector` model version to `@champion` alias in MLflow UI (if not done), then begin Stage 2b — move MLflow backend store to shared location and uncomment ECR push job in ci-cd.yml
+**Next session**: Begin Stage 2b — host MLflow tracking server on EC2 (or move backend store to shared location) so CI can query the registry, then uncomment and wire up the ECR push job in ci-cd.yml
 
-**Interview Q**: MLflow 3.x removed Staging/Production stages — what replaced them, and how would you reference the champion model version in code?
+**Interview Q**: MLflow 3.x removed Staging/Production stages — what replaced them, and how do you reference the champion model version in code?

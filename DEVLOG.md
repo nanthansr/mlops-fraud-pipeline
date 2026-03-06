@@ -16,17 +16,35 @@
 ---
 
 ### What I built / did today
-- Reordered project stages: MLflow (Stage 3) before ECR/ECS deploy (Stage 2b)
-- Updated README to reflect new stage order with rationale
-- Updated `ci-cd.yml`: added OIDC auth (`permissions: id-token: write`), fixed `AWS_REGION` from hardcoded `us-east-1` → secret, updated Stage 2b commented block to use role-based auth
-- Updated `docker-compose.yml`: MLflow service now installs boto3 and uses S3 as artifact backend (`--default-artifact-root s3://...`); mounts `~/.aws` for local AWS auth
-- Updated `train.py`: added MLflow tracking (params + metrics logged), model registered to MLflow registry as `fraud-detector`, artifacts pushed to S3; tracking URI read from env var with localhost fallback
-- Added Stage 2b note in `train.py` — backend store must move to shared location before CI can query registry
+- Provisioned S3 bucket `mlops-fraud-pipeline-artifacts-nanthan` (us-east-2) for MLflow artifact storage
+- Set up OIDC on AWS — GitHub Actions authenticates via short-lived STS tokens, no stored access keys
+- Created IAM role `mlops-github-actions-role` with least-privilege inline S3 policy (3 actions, specific bucket only)
+- Installed AWS CLI, configured local credentials via `mlops-local-dev` IAM user
+- Added GitHub secrets: `AWS_ROLE_ARN`, `AWS_REGION`
+- Reordered stages: MLflow (Stage 3) before ECR/ECS deploy (Stage 2b)
+- Updated `ci-cd.yml`: OIDC permissions, region secret fix, Stage 2b block uses `role-to-assume` + `@champion` alias comment
+- Updated `docker-compose.yml`: MLflow → S3 artifact backend, boto3, `~/.aws` mount, upgraded to v3.10.1
+- Updated `train.py`: MLflow experiment tracking (params + metrics), model registered as `fraud-detector`, tracking URI via env var, Stage 2b backend store limitation noted
+- Fixed MLflow version mismatch: local 3.10.1 vs Docker 2.13.0 — aligned both to 3.10.1
+- Ran full loop: train → MLflow logs run → artifact in S3 → registered as `fraud-detector@champion` ✅
+- CI passing after all changes
 
 ### Decisions made and WHY
-**Decision**: Do MLflow (Stage 3) before ECR/ECS deploy (Stage 2b)
-**Why**: Deploying to ECS without a model registry means shipping an unversioned, untracked model. MLflow registry lets CI pull a known, approved model version — which is what "preventing a bad model from deploying" actually means in production.
-**Alternatives considered**: ECR/ECS first — rejected because the CI pipeline would need to be rebuilt anyway once MLflow is added; doing it in the right order avoids rework
+**Decision**: OIDC over IAM access keys for CI auth
+**Why**: Access keys are long-lived — if leaked, exposure until manually revoked. OIDC tokens are issued per job by GitHub, verified by AWS STS, and expire when the job ends. Nothing stored anywhere.
+**Alternatives considered**: IAM access keys stored as GitHub secrets — rejected, permanent exposure risk
+
+**Decision**: Least-privilege S3 policy (not S3FullAccess)
+**Why**: IAM best practice — grant only what's needed. Role only needs GetObject, PutObject, ListBucket on this specific bucket. S3FullAccess would allow deleting any bucket, reading any object across the account.
+**Alternatives considered**: S3FullAccess — faster to set up, rejected as a security anti-pattern
+
+**Decision**: MLflow 3.x alias `@champion` over Staging/Production stages
+**Why**: MLflow removed the old stage system in 2.13.0. Aliases are more flexible — you can have multiple (champion, challenger, rollback) and they're not limited to a fixed workflow.
+**Alternatives considered**: Old `Production` stage string — no longer exists in MLflow 3.x
+
+**Decision**: Backend store stays local for now
+**Why**: Moving it to a shared location (EC2-hosted MLflow or RDS) is a bigger infrastructure step. For Stage 3 local dev, local backend is fine — artifact storage (the important part for CI) is already on S3.
+**Alternatives considered**: Move backend to S3-backed SQLite now — deferred to Stage 2b
 
 ---
 
