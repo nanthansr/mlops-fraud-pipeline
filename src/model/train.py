@@ -19,6 +19,8 @@ from sklearn.metrics import (
 from sklearn.pipeline import Pipeline
 from xgboost import XGBClassifier
 from imblearn.over_sampling import SMOTE
+import mlflow
+import mlflow.xgboost
 import joblib
 import os
 import json
@@ -26,6 +28,12 @@ import logging
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s — %(message)s")
 logger = logging.getLogger(__name__)
+
+# MLflow tracking URI — defaults to local docker-compose MLflow server.
+# NOTE (Stage 2b): before CI can fetch the Production model from the registry,
+# the backend store (currently ./mlruns, local only) must be moved to a shared
+# location (e.g. S3-backed SQLite or hosted MLflow on EC2). See Stage 2b plan.
+MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5001")
 
 DATA_PATH = "data/raw/creditcard.csv"
 MODEL_DIR = "models"
@@ -111,21 +119,44 @@ def main():
     )
     logger.info(f"Train: {len(X_train):,} | Test: {len(X_test):,}")
 
-    # Train
-    model = train(X_train, y_train)
+    # MLflow setup
+    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+    mlflow.set_experiment("fraud-detection")
 
-    # Evaluate
-    metrics = evaluate(model, X_test, y_test)
+    with mlflow.start_run():
+        # Train
+        model = train(X_train, y_train)
 
-    # Save
-    os.makedirs(MODEL_DIR, exist_ok=True)
-    joblib.dump(model, MODEL_PATH)
-    logger.info(f"✅ Model saved to {MODEL_PATH}")
+        # Evaluate
+        metrics = evaluate(model, X_test, y_test)
 
-    with open(METRICS_PATH, "w") as f:
-        json.dump(metrics, f, indent=2)
-    logger.info(f"✅ Metrics saved to {METRICS_PATH}")
-    logger.info(f"\nFinal metrics: {metrics}")
+        # Log params
+        mlflow.log_param("n_estimators", 100)
+        mlflow.log_param("max_depth", 6)
+        mlflow.log_param("learning_rate", 0.1)
+        mlflow.log_param("scale_pos_weight", round((y_train == 0).sum() / (y_train == 1).sum(), 1))
+
+        # Log metrics
+        mlflow.log_metric("roc_auc", metrics["roc_auc"])
+        mlflow.log_metric("avg_precision", metrics["avg_precision"])
+
+        # Log model to MLflow registry (artifacts pushed to S3)
+        mlflow.xgboost.log_model(
+            model,
+            artifact_path="model",
+            registered_model_name="fraud-detector"
+        )
+        logger.info("✅ Model logged to MLflow registry as 'fraud-detector'")
+
+        # Save locally too — FastAPI still loads from models/model.joblib
+        os.makedirs(MODEL_DIR, exist_ok=True)
+        joblib.dump(model, MODEL_PATH)
+        logger.info(f"✅ Model saved to {MODEL_PATH}")
+
+        with open(METRICS_PATH, "w") as f:
+            json.dump(metrics, f, indent=2)
+        logger.info(f"✅ Metrics saved to {METRICS_PATH}")
+        logger.info(f"\nFinal metrics: {metrics}")
 
 
 if __name__ == "__main__":

@@ -24,8 +24,17 @@ services:
     ports:
       - "5001:5000"
     volumes:
-      - ./mlruns:/mlflow/mlruns
-    command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri /mlflow/mlruns
+      - ./mlruns:/mlflow/mlruns      # run metadata (params, metrics) stays local
+      - ~/.aws:/root/.aws:ro         # mount host AWS credentials for S3 access
+    environment:
+      - AWS_DEFAULT_REGION
+    command: >
+      bash -c "pip install boto3 &&
+      mlflow server
+      --host 0.0.0.0
+      --port 5000
+      --backend-store-uri /mlflow/mlruns
+      --default-artifact-root s3://mlops-fraud-pipeline-artifacts-nanthan/mlflow-artifacts"
 
   # ── Prometheus metrics scraper ──
   prometheus:
