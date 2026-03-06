@@ -86,7 +86,9 @@ jobs:
   #       env:
   #         MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
   #       run: |
-  #         python scripts/fetch_model.py  # fetches Production model from registry
+  #         python scripts/fetch_model.py  # fetches @champion alias model from registry
+  #         # MLflow 3.x: use alias "champion" instead of stage "Production"
+  #         # mlflow.xgboost.load_model("models:/fraud-detector@champion")
   #
   #     - name: Build, tag, and push image to ECR
   #       env:

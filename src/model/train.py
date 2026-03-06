@@ -30,9 +30,12 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s — %(message)s")
 logger = logging.getLogger(__name__)
 
 # MLflow tracking URI — defaults to local docker-compose MLflow server.
-# NOTE (Stage 2b): before CI can fetch the Production model from the registry,
+# NOTE (Stage 2b): before CI can fetch the champion model from the registry,
 # the backend store (currently ./mlruns, local only) must be moved to a shared
 # location (e.g. S3-backed SQLite or hosted MLflow on EC2). See Stage 2b plan.
+# MLflow 3.x uses aliases instead of Staging/Production stages.
+# Promote a model version with alias "champion" in the UI.
+# Fetch in CI with: mlflow.xgboost.load_model("models:/fraud-detector@champion")
 MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5001")
 
 DATA_PATH = "data/raw/creditcard.csv"
