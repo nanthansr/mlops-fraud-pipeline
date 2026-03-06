@@ -7,8 +7,12 @@ on:
     branches: [main]
 
 env:
-  AWS_REGION: us-east-1
+  AWS_REGION: ${{ secrets.AWS_REGION }}
   ECR_REPOSITORY: mlops-fraud-pipeline
+
+permissions:
+  id-token: write   # required for OIDC token request
+  contents: read    # required for actions/checkout
 
 jobs:
   # ── Stage 1: Test ──
@@ -59,8 +63,8 @@ jobs:
       - name: Build Docker image
         run: docker build -t fraud-detection-app .
 
-  # ── Stage 2: Build & Push to AWS ECR ──
-  # Uncomment when you reach Stage 2
+  # ── Stage 2b: Build & Push to AWS ECR (wired to MLflow registry) ──
+  # Uncomment when Stage 3 MLflow is complete
   # build-and-push:
   #   needs: test
   #   runs-on: ubuntu-latest
@@ -68,16 +72,21 @@ jobs:
   #   steps:
   #     - uses: actions/checkout@v4
   #
-  #     - name: Configure AWS credentials
+  #     - name: Configure AWS credentials (OIDC)
   #       uses: aws-actions/configure-aws-credentials@v4
   #       with:
-  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
   #         aws-region: ${{ env.AWS_REGION }}
   #
   #     - name: Login to Amazon ECR
   #       id: login-ecr
   #       uses: aws-actions/amazon-ecr-login@v2
+  #
+  #     - name: Fetch registered model from MLflow (S3)
+  #       env:
+  #         MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+  #       run: |
+  #         python scripts/fetch_model.py  # fetches Production model from registry
   #
   #     - name: Build, tag, and push image to ECR
   #       env:
@@ -86,4 +95,3 @@ jobs:
   #       run: |
   #         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
   #         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-  #         echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
