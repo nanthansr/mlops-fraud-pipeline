@@ -69,6 +69,22 @@ GitHub Actions secrets — you store sensitive stuff like `KAGGLE_KEY` in the re
 
 ---
 
+## 2026-03-10
+
+**What I worked on:**
+Stage 2b — getting an EC2 instance running as the MLflow tracking server so CI can finally query the model registry instead of dying because `./mlruns` doesn't exist on the GitHub runner.
+
+**What broke or confused me:**
+Two things. First: lab WiFi blocks port 5000 outright — train.py just hung. Had to switch to my hotspot before it could even reach the EC2 server. Second: t3.micro is genuinely too small for MLflow. It was sitting at 570MB idle and the moment train.py tried to register the model (POST to `model-versions/create`), the server OOM-killed itself and returned a 500. Upgraded to t3.small. Then SSH stopped responding entirely — best guess is the security group SSH rule still has my lab WiFi IP and I'm now on hotspot, so it's blocking me.
+
+**What I figured out or decided:**
+t3.micro is not viable for MLflow — use t3.small minimum. Also, always assign an Elastic IP before doing anything else — dynamic public IPs change on stop/start and everything downstream (GitHub secrets, security group rules, my own SSH config) breaks when they do. Learned that the hard way.
+
+**Interesting tool or concept I used:**
+EC2 Instance Connect — browser-based SSH from the AWS console. Doesn't care what IP you're on, hits the instance through AWS's own network. Good emergency fallback when your security group locks you out.
+
+---
+
 ## 2026-03-06
 
 **What I worked on:**

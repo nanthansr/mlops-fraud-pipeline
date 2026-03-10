@@ -5,6 +5,59 @@
 
 <!-- ENTRIES BELOW — newest at top -->
 
+## 2026-03-10 Tuesday
+**Stage**: Stage 2b / Stage 3 — MLflow backend + ECR/ECS deploy
+**Branch**: `main`
+**Last commit**: e4e30b7 devlog: 2026-03-06 full session notes — AWS infra + MLflow Stage 3
+
+### Picked up from last session
+> Promote `fraud-detector` to `@champion` alias in MLflow UI if not done, then begin Stage 2b — move MLflow backend store to shared location and uncomment ECR push job in ci-cd.yml
+
+---
+
+### What I built / did today
+- Launched EC2 instance `mlops_mlflow_server` (us-east-2, t3.micro → upgraded to t3.small)
+- Configured security group: port 22 (my IP), port 5000 (0.0.0.0/0)
+- Installed MLflow on EC2 as a systemd service
+- Pointed `train.py` at EC2 tracking URI — successfully logged run `salty-wasp-147` and registered `fraud-detector` in EC2 MLflow registry
+- Discovered lab WiFi blocks non-standard ports — had to switch to hotspot to reach port 5000
+
+### Decisions made and WHY
+**Decision**: SQLite backend store on EC2 (not RDS)
+**Why**: RDS adds cost and complexity that's unnecessary at this scope. SQLite is fine for a single-writer portfolio project.
+**Alternatives considered**: RDS PostgreSQL — deferred, overkill here
+
+**Decision**: Port 5000 open to 0.0.0.0/0
+**Why**: GitHub Actions IPs are a large, changing range — restricting by IP isn't practical for CI. Accepted tradeoff for portfolio project, will document in README.
+**Alternatives considered**: Restrict to GitHub IP ranges — impractical, ranges change
+
+**Decision**: Upgraded to t3.small (2GB RAM)
+**Why**: t3.micro OOM-killed MLflow — 570MB idle left zero headroom for the server process. t3.small is the minimum viable size.
+**Alternatives considered**: Stay on t3.micro — model registration was 500-erroring, not viable
+
+---
+
+### What broke
+**Problem**: t3.micro OOM — MLflow server crashed with 500 errors on `model-versions/create`
+**Error**: 500 Internal Server Error from MLflow registry endpoint during `train.py` model registration
+**Fix / Status**: Upgraded to t3.small. SSH now unresponsive on new instance — not yet resolved.
+
+**Problem**: SSH timing out on t3.small after instance type change
+**Error**: Connection timeout to 3.15.26.187:22
+**Fix / Status**: Suspected cause — security group SSH rule still has lab WiFi IP, now on hotspot. To investigate tomorrow.
+
+---
+
+### Blocked on
+**Blocked on**: SSH to EC2 (3.15.26.187) timing out — likely security group SSH rule has stale IP. Blocked on fixing this before any further EC2/MLflow/ECR work can proceed.
+
+---
+
+### Next session
+**Next action**: Fix SSH (update security group SSH rule to current IP, or use EC2 Instance Connect from browser as fallback) → assign Elastic IP → confirm MLflow running on t3.small → re-run train.py → set @champion alias → add MLFLOW_TRACKING_URI to GitHub Secrets → create ECR repo → write fetch_model.py → uncomment build-and-push in ci-cd.yml
+
+---
+
 ## 2026-03-06 Friday
 **Stage**: Stage 2 — CI/CD (GitHub Actions → AWS ECR → ECS)
 **Branch**: `main`

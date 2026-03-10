@@ -189,3 +189,30 @@
 **Next session**: Begin Stage 2b — host MLflow tracking server on EC2 (or move backend store to shared location) so CI can query the registry, then uncomment and wire up the ECR push job in ci-cd.yml
 
 **Interview Q**: MLflow 3.x removed Staging/Production stages — what replaced them, and how do you reference the champion model version in code?
+
+## Session 2026-03-10 HH:MM
+
+**Pre-session state**:
+- Branch: `main`
+- Last commit: `e4e30b7 devlog: 2026-03-06 full session notes — AWS infra + MLflow Stage 3`
+- Modified files: none
+- Untracked files: `AWSCLIV2.pkg`
+
+**Picked up from last session**: Begin Stage 2b — host MLflow tracking server on EC2 (or move backend store to shared location) so CI can query the registry, then uncomment and wire up the ECR push job in ci-cd.yml
+
+**Goal**: Spin up EC2-hosted MLflow tracking server so GitHub Actions CI can query the fraud-detector@champion model registry
+
+**Work log**:
+- Launched EC2 `mlops_mlflow_server` (us-east-2, t3.micro → t3.small after OOM)
+- Security group: port 22 (own IP), port 5000 (0.0.0.0/0)
+- Installed MLflow on EC2 as systemd service
+- Switched to hotspot — lab WiFi blocks port 5000
+- train.py hit EC2 MLflow, logged run salty-wasp-147, registered fraud-detector in registry ✅
+- t3.micro OOM-killed MLflow on model-versions/create (500 errors) — upgraded to t3.small
+- SSH to t3.small now unresponsive — suspected stale SSH IP rule in security group
+
+**Files changed**: none — all work was AWS console + EC2 setup
+**Decisions made**: SQLite backend (not RDS), port 5000 open to 0.0.0.0/0, t3.small over t3.micro
+**Blockers**: SSH to EC2 (3.15.26.187) timing out — security group SSH rule likely has stale IP from lab WiFi
+**Next session**: Fix SSH → assign Elastic IP → confirm MLflow on t3.small → re-run train.py → set @champion alias → MLFLOW_TRACKING_URI secret → create ECR repo → fetch_model.py → uncomment build-and-push in ci-cd.yml
+**Interview Q**: Your MLflow tracking server is on EC2 with port 5000 open to 0.0.0.0/0 — what are the risks and what would you do differently in a real production setup?
