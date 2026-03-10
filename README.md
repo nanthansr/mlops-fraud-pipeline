@@ -68,7 +68,7 @@ docker compose run app pytest tests/ -v
 
 ## Architecture
 
-[→ View interactive architecture diagram](docs/architecture.html)
+[→ View interactive architecture diagram](https://nanthansr.github.io/mlops-fraud-pipeline/architecture.html)
 
 ## Dataset
 
