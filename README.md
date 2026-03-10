@@ -70,6 +70,22 @@ docker compose run app pytest tests/ -v
 
 [→ View interactive architecture diagram](https://nanthansr.github.io/mlops-fraud-pipeline/architecture.html)
 
+```
+[Kaggle Dataset] → [Feature Engineering] → [XGBoost Model]
+                                                  ↓
+                                          [MLflow Registry]
+                                                  ↓
+                                [FastAPI Prediction Service]
+                                          ↓           ↓
+                              [GitHub Actions]    [Prometheus]
+                                    ↓                 ↓
+                             [AWS ECR/ECS]      [Grafana Dashboard]
+                                                       ↓
+                                           [AIOps Anomaly Detector]
+                                                       ↓
+                                              [Slack/Email Alert]
+```
+
 ## Dataset
 
 **Credit Card Fraud Detection** — Kaggle
