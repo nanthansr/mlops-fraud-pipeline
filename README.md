@@ -68,21 +68,7 @@ docker compose run app pytest tests/ -v
 
 ## Architecture
 
-```
-[Kaggle Dataset] → [Feature Engineering] → [XGBoost Model]
-                                                  ↓
-                                          [MLflow Registry]
-                                                  ↓
-                                [FastAPI Prediction Service]
-                                          ↓           ↓
-                              [GitHub Actions]    [Prometheus]
-                                    ↓                 ↓
-                             [AWS ECR/ECS]      [Grafana Dashboard]
-                                                       ↓
-                                           [AIOps Anomaly Detector]
-                                                       ↓
-                                              [Slack/Email Alert]
-```
+[→ View interactive architecture diagram](docs/architecture.html)
 
 ## Dataset
 
