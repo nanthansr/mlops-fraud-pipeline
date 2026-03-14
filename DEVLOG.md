@@ -6,9 +6,9 @@
 <!-- ENTRIES BELOW — newest at top -->
 
 ## 2026-03-13 Friday
-**Stage**: Stage 2b / Stage 3 — MLflow EC2 backend + ECR/ECS deploy
+**Stage**: Stage 2b — COMPLETE
 **Branch**: `main`
-**Last commit**: 66d16ca devlog: 2026-03-10 session notes — Stage 2b EC2 MLflow setup (blocked on SSH)
+**Last commit**: 4e0d3f7 ci: activate Stage 2b — ECR build-and-push wired to MLflow registry
 
 ### Picked up from last session
 > Fix SSH (update security group SSH rule to current IP, or use EC2 Instance Connect from browser as fallback) → assign Elastic IP → confirm MLflow running on t3.small → re-run train.py → set @champion alias → add MLFLOW_TRACKING_URI to GitHub Secrets → create ECR repo → write fetch_model.py → uncomment build-and-push in ci-cd.yml
@@ -17,37 +17,50 @@
 
 ### What I built / did today
 - Fixed EC2 SSH — updated security group SSH rule (temporarily 0.0.0.0/0 to unblock, then tightened)
-- Assigned Elastic IP to EC2 — instance now has static IP 3.15.26.187
-- Confirmed MLflow systemd service running on t3.small
-- Re-ran train.py with MLFLOW_TRACKING_URI → EC2 — clean run, artifacts landed in S3
+- Assigned Elastic IP 3.15.26.187 to EC2 — stable address, no more IP drift
+- Confirmed MLflow systemd service running and healthy on t3.small after reboot
+- Re-ran train.py with MLFLOW_TRACKING_URI → EC2 — clean run, artifacts in S3
 - Set `fraud-detector@champion` alias in MLflow registry on EC2
-- Added `MLFLOW_TRACKING_URI` to GitHub Secrets (using Elastic IP)
+- Added `MLFLOW_TRACKING_URI` + `ECR_REPOSITORY_URI` to GitHub Secrets
 - Created ECR repository `mlops-fraud-pipeline` in us-east-2
-- Added `ECR_REPOSITORY_URI` to GitHub Secrets
-- Confirmed IAM role `mlops-github-actions-role` has ECR permissions
-- Wrote `scripts/fetch_model.py` — fetches `fraud-detector@champion` from MLflow, saves to `models/`
+- Confirmed IAM role `mlops-github-actions-role` has ECR + S3 access
+- Wrote `scripts/fetch_model.py` — loads `@champion` via `mlflow.xgboost.load_model`, re-serializes as `models/model.joblib` for FastAPI
+- Removed old blind-retrain `build` job from ci-cd.yml, activated `build-and-push` job
+- Verified full CI loop: push → tests → fetch champion → docker build → push to ECR ✅
 
 ### Decisions made and WHY
-**Decision**:
-**Why**:
-**Alternatives considered**:
+**Decision**: `mlflow.xgboost.load_model` + `joblib.dump` in fetch_model.py instead of `download_artifacts`
+**Why**: `download_artifacts` dumps the raw MLflow artifact directory (MLmodel, model.xgb, conda files) — main.py expects `joblib.load("models/model.joblib")`. Loading via the XGBoost flavor and re-serializing gives FastAPI exactly what it needs.
+**Alternatives considered**: Change main.py to load from MLflow directly — more invasive, breaks local dev workflow
+
+**Decision**: Removed blind-retrain `build` job entirely
+**Why**: CI was downloading Kaggle data and retraining on every push — expensive, non-deterministic, and bypasses the registry. Champion model lives in MLflow; CI should fetch it, not recreate it.
+**Alternatives considered**: Keep both jobs — unnecessary duplication
+
+**Decision**: `pip install mlflow boto3` explicitly in build-and-push job
+**Why**: boto3 is not in requirements.txt (it's a CI/AWS concern, not a runtime dep). Fresh runner has nothing — can't assume.
+**Alternatives considered**: Add boto3 to requirements.txt — pollutes the runtime image with a dep only needed in CI
+
+**Decision**: Image tagged with `github.sha`
+**Why**: Full traceability — every ECR image maps back to an exact commit. Makes rollbacks and incident investigation unambiguous.
+**Alternatives considered**: `latest` tag — loses traceability, unsafe for prod
 
 ---
 
 ### What broke
-**Problem**:
-**Error**:
-**Fix / Status**:
+**Problem**: `fetch_model.py` initial draft used `mlflow.artifacts.download_artifacts`
+**Error**: Would have dumped MLflow artifact dir to disk — main.py can't joblib.load that
+**Fix / Status**: Rewrote to use `mlflow.xgboost.load_model` + `joblib.dump` ✅
 
 ---
 
 ### Blocked on
-**Blocked on**:
+**Blocked on**: Nothing — Stage 2b complete. Next is ECS deployment (Stage 2b continued).
 
 ---
 
 ### Next session
-**Next action**:
+**Next action**: ECS deployment — pull image from ECR, run as Fargate service, expose /predict publicly, wire health checks
 
 ---
 

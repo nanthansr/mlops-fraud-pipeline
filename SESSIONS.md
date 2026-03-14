@@ -227,21 +227,23 @@
 
 **Picked up from last session**: Fix SSH → assign Elastic IP → confirm MLflow on t3.small → re-run train.py → set @champion alias → MLFLOW_TRACKING_URI secret → create ECR repo → fetch_model.py → uncomment build-and-push in ci-cd.yml
 
-**Goal**: [to be filled by user]
+**Goal**: Complete Stage 2b — fix SSH blocker, wire ECR build-and-push to MLflow registry, verify full CI loop
 
 **Work log**:
 - Fixed EC2 SSH — SG SSH rule updated (temp 0.0.0.0/0 → tightened back)
 - Elastic IP 3.15.26.187 assigned to EC2
-- MLflow systemd service confirmed on t3.small
+- MLflow systemd service confirmed healthy on t3.small after reboot
 - train.py re-run → EC2 MLflow tracking, artifacts in S3 ✅
 - fraud-detector@champion alias set in MLflow registry ✅
 - MLFLOW_TRACKING_URI + ECR_REPOSITORY_URI added to GitHub Secrets
 - ECR repo mlops-fraud-pipeline created in us-east-2
-- IAM role ECR permissions confirmed
-- scripts/fetch_model.py written — fetches @champion model from MLflow
+- IAM role ECR + S3 permissions confirmed
+- scripts/fetch_model.py written — mlflow.xgboost.load_model + joblib.dump (not download_artifacts)
+- ci-cd.yml: old blind-retrain build job removed, build-and-push job activated
+- Full CI loop verified: push → tests → fetch @champion → docker build → ECR push ✅
 
-**Files changed**: <!-- filled at /stop -->
-**Decisions made**: <!-- filled at /stop -->
-**Blockers**: <!-- filled at /stop -->
-**Next session**: <!-- filled at /stop -->
-**Interview Q**: <!-- filled at /stop -->
+**Files changed**: `scripts/fetch_model.py` (new), `.github/workflows/ci-cd.yml`, `DEVLOG.md`, `SESSIONS.md`
+**Decisions made**: mlflow.xgboost.load_model over download_artifacts (FastAPI needs joblib not MLflow dir); removed blind-retrain job; explicit boto3 install in CI; image tagged with github.sha
+**Blockers**: None — Stage 2b complete
+**Next session**: ECS deployment — pull image from ECR, run as Fargate service, expose /predict publicly, wire health checks
+**Interview Q**: CI now fetches a registered model from MLflow instead of retraining — what are the tradeoffs of baking the model into the Docker image at build time vs loading it at container startup from S3/MLflow?
