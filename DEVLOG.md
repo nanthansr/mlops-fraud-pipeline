@@ -5,6 +5,52 @@
 
 <!-- ENTRIES BELOW — newest at top -->
 
+## 2026-03-13 Friday
+**Stage**: Stage 2b / Stage 3 — MLflow EC2 backend + ECR/ECS deploy
+**Branch**: `main`
+**Last commit**: 66d16ca devlog: 2026-03-10 session notes — Stage 2b EC2 MLflow setup (blocked on SSH)
+
+### Picked up from last session
+> Fix SSH (update security group SSH rule to current IP, or use EC2 Instance Connect from browser as fallback) → assign Elastic IP → confirm MLflow running on t3.small → re-run train.py → set @champion alias → add MLFLOW_TRACKING_URI to GitHub Secrets → create ECR repo → write fetch_model.py → uncomment build-and-push in ci-cd.yml
+
+---
+
+### What I built / did today
+- Fixed EC2 SSH — updated security group SSH rule (temporarily 0.0.0.0/0 to unblock, then tightened)
+- Assigned Elastic IP to EC2 — instance now has static IP 3.15.26.187
+- Confirmed MLflow systemd service running on t3.small
+- Re-ran train.py with MLFLOW_TRACKING_URI → EC2 — clean run, artifacts landed in S3
+- Set `fraud-detector@champion` alias in MLflow registry on EC2
+- Added `MLFLOW_TRACKING_URI` to GitHub Secrets (using Elastic IP)
+- Created ECR repository `mlops-fraud-pipeline` in us-east-2
+- Added `ECR_REPOSITORY_URI` to GitHub Secrets
+- Confirmed IAM role `mlops-github-actions-role` has ECR permissions
+- Wrote `scripts/fetch_model.py` — fetches `fraud-detector@champion` from MLflow, saves to `models/`
+
+### Decisions made and WHY
+**Decision**:
+**Why**:
+**Alternatives considered**:
+
+---
+
+### What broke
+**Problem**:
+**Error**:
+**Fix / Status**:
+
+---
+
+### Blocked on
+**Blocked on**:
+
+---
+
+### Next session
+**Next action**:
+
+---
+
 ## 2026-03-10 Tuesday
 **Stage**: Stage 2b / Stage 3 — MLflow backend + ECR/ECS deploy
 **Branch**: `main`

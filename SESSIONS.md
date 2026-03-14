@@ -216,3 +216,32 @@
 **Blockers**: SSH to EC2 (3.15.26.187) timing out — security group SSH rule likely has stale IP from lab WiFi
 **Next session**: Fix SSH → assign Elastic IP → confirm MLflow on t3.small → re-run train.py → set @champion alias → MLFLOW_TRACKING_URI secret → create ECR repo → fetch_model.py → uncomment build-and-push in ci-cd.yml
 **Interview Q**: Your MLflow tracking server is on EC2 with port 5000 open to 0.0.0.0/0 — what are the risks and what would you do differently in a real production setup?
+
+## Session 2026-03-13 19:14
+
+**Pre-session state**:
+- Branch: `main`
+- Last commit: `66d16ca devlog: 2026-03-10 session notes — Stage 2b EC2 MLflow setup (blocked on SSH)`
+- Modified files: none
+- Untracked files: `AWSCLIV2.pkg`
+
+**Picked up from last session**: Fix SSH → assign Elastic IP → confirm MLflow on t3.small → re-run train.py → set @champion alias → MLFLOW_TRACKING_URI secret → create ECR repo → fetch_model.py → uncomment build-and-push in ci-cd.yml
+
+**Goal**: [to be filled by user]
+
+**Work log**:
+- Fixed EC2 SSH — SG SSH rule updated (temp 0.0.0.0/0 → tightened back)
+- Elastic IP 3.15.26.187 assigned to EC2
+- MLflow systemd service confirmed on t3.small
+- train.py re-run → EC2 MLflow tracking, artifacts in S3 ✅
+- fraud-detector@champion alias set in MLflow registry ✅
+- MLFLOW_TRACKING_URI + ECR_REPOSITORY_URI added to GitHub Secrets
+- ECR repo mlops-fraud-pipeline created in us-east-2
+- IAM role ECR permissions confirmed
+- scripts/fetch_model.py written — fetches @champion model from MLflow
+
+**Files changed**: <!-- filled at /stop -->
+**Decisions made**: <!-- filled at /stop -->
+**Blockers**: <!-- filled at /stop -->
+**Next session**: <!-- filled at /stop -->
+**Interview Q**: <!-- filled at /stop -->

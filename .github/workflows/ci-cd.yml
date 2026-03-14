@@ -32,11 +32,11 @@ jobs:
       - name: Run tests
         run: pytest tests/ -v
 
-  # ── Stage 2: Build Docker Image ──
-  build:
-    runs-on: ubuntu-latest
+  # ── Stage 2b: Build & Push to AWS ECR (wired to MLflow registry) ──
+  build-and-push:
     needs: test
-
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
 
@@ -46,54 +46,29 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Download dataset
-        env:
-          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
-          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
         run: |
-          pip install kaggle
-          mkdir -p data/raw
-          kaggle datasets download -d mlg-ulb/creditcardfraud -p data/raw --unzip
+          pip install -r requirements.txt
+          pip install mlflow boto3
 
-      - name: Train model
-        run: python src/model/train.py
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Build Docker image
-        run: docker build -t fraud-detection-app .
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
-  # ── Stage 2b: Build & Push to AWS ECR (wired to MLflow registry) ──
-  # Uncomment when Stage 3 MLflow is complete
-  # build-and-push:
-  #   needs: test
-  #   runs-on: ubuntu-latest
-  #   if: github.ref == 'refs/heads/main'
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #
-  #     - name: Configure AWS credentials (OIDC)
-  #       uses: aws-actions/configure-aws-credentials@v4
-  #       with:
-  #         role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-  #         aws-region: ${{ env.AWS_REGION }}
-  #
-  #     - name: Login to Amazon ECR
-  #       id: login-ecr
-  #       uses: aws-actions/amazon-ecr-login@v2
-  #
-  #     - name: Fetch registered model from MLflow (S3)
-  #       env:
-  #         MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
-  #       run: |
-  #         python scripts/fetch_model.py  # fetches @champion alias model from registry
-  #         # MLflow 3.x: use alias "champion" instead of stage "Production"
-  #         # mlflow.xgboost.load_model("models:/fraud-detector@champion")
-  #
-  #     - name: Build, tag, and push image to ECR
-  #       env:
-  #         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-  #         IMAGE_TAG: ${{ github.sha }}
-  #       run: |
-  #         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-  #         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+      - name: Fetch registered model from MLflow registry
+        env:
+          MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+        run: python scripts/fetch_model.py
+
+      - name: Build, tag, and push image to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
