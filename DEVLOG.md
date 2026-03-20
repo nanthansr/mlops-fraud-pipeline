@@ -46,7 +46,7 @@
 ---
 
 ## 2026-03-13 Friday
-**Stage**: Stage 2b — COMPLETE
+**Stage**: Stage 2b — FULLY COMPLETE
 **Branch**: `main`
 **Last commit**: 4e0d3f7 ci: activate Stage 2b — ECR build-and-push wired to MLflow registry
 
@@ -66,7 +66,11 @@
 - Confirmed IAM role `mlops-github-actions-role` has ECR + S3 access
 - Wrote `scripts/fetch_model.py` — loads `@champion` via `mlflow.xgboost.load_model`, re-serializes as `models/model.joblib` for FastAPI
 - Removed old blind-retrain `build` job from ci-cd.yml, activated `build-and-push` job
-- Verified full CI loop: push → tests → fetch champion → docker build → push to ECR ✅
+- Created ECS cluster `mlops-fraud-pipeline` (Fargate, us-east-2)
+- Created task definition `mlops-fraud-pipeline` — 0.25 vCPU, 0.5GB RAM, port 8000, image from ECR
+- Deployed service `fraud-detection-service` — public IP 18.220.17.19
+- Verified `/predict` live and returning correct predictions ✅
+- Verified `/health` — `{"status":"running","model_loaded":true}` ✅
 
 ### Decisions made and WHY
 **Decision**: `mlflow.xgboost.load_model` + `joblib.dump` in fetch_model.py instead of `download_artifacts`
@@ -85,6 +89,10 @@
 **Why**: Full traceability — every ECR image maps back to an exact commit. Makes rollbacks and incident investigation unambiguous.
 **Alternatives considered**: `latest` tag — loses traceability, unsafe for prod
 
+**Decision**: Fargate over EC2-backed ECS
+**Why**: No EC2 instance management — cluster scales to zero when idle, no patching overhead. Right call for a portfolio project with bursty traffic.
+**Alternatives considered**: EC2 launch type — more control but more ops burden
+
 ---
 
 ### What broke
@@ -95,12 +103,20 @@
 ---
 
 ### Blocked on
-**Blocked on**: Nothing — Stage 2b complete. Next is ECS deployment (Stage 2b continued).
+**Blocked on**: Nothing — Stage 2b fully complete.
+
+**Known gap (fix before Stage 6)**: ECS task definition points at a static image tag. When CI pushes a new image, ECS does not automatically redeploy. Fix is to add to end of `build-and-push` job:
+```bash
+aws ecs update-service \
+  --cluster mlops-fraud-pipeline \
+  --service fraud-detection-service \
+  --force-new-deployment
+```
 
 ---
 
 ### Next session
-**Next action**: ECS deployment — pull image from ECR, run as Fargate service, expose /predict publicly, wire health checks
+**Next action**: Stage 4 — wire Prometheus to scrape FastAPI /metrics, build Grafana dashboard (prediction rate, fraud rate, latency). Run locally via Docker Compose first, then mirror to ECS.
 
 ---
 
