@@ -247,3 +247,27 @@
 **Blockers**: None — Stage 2b complete
 **Next session**: ECS deployment — pull image from ECR, run as Fargate service, expose /predict publicly, wire health checks
 **Interview Q**: CI now fetches a registered model from MLflow instead of retraining — what are the tradeoffs of baking the model into the Docker image at build time vs loading it at container startup from S3/MLflow?
+
+## Session 2026-03-20 06:11
+
+**Pre-session state**:
+- Branch: `main`
+- Last commit: `8fb816d devlog: 2026-03-13 session notes — Stage 2b complete`
+- Modified files: none
+- Untracked files: `AWSCLIV2.pkg`
+
+**Picked up from last session**: ECS deployment — pull image from ECR, run as Fargate service, expose /predict publicly, wire health checks
+
+**Goal**: Complete ECS deployment — get /predict live on Fargate
+
+**Work log**:
+- Created ECS cluster `mlops-fraud-pipeline` (Fargate)
+- Task definition `mlops-fraud-pipeline` — 0.25 vCPU, 0.5GB, port 8000
+- Deployed service `fraud-detection-service` — public IP 18.220.17.19
+- Verified /predict live and returning correct predictions ✅
+
+**Files changed**: none — all AWS console work
+**Decisions made**: Fargate (serverless containers, no EC2 management); 0.25 vCPU / 0.5GB (minimum viable for inference)
+**Blockers**: None — Stage 2b fully complete
+**Next session**: Stage 4 — wire Prometheus scraping to FastAPI /metrics, set up Grafana dashboard
+**Interview Q**: Your ECS task has 0.25 vCPU and 0.5GB RAM — how would you decide when to scale up, and what metrics would you watch?

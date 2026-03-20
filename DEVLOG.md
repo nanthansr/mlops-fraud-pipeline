@@ -5,6 +5,46 @@
 
 <!-- ENTRIES BELOW — newest at top -->
 
+## 2026-03-20 Friday
+**Stage**: Stage 4 — Monitoring (Prometheus + Grafana)
+**Branch**: `main`
+**Last commit**: 8fb816d devlog: 2026-03-13 session notes — Stage 2b complete
+
+### Picked up from last session
+> ECS deployment — pull image from ECR, run as Fargate service, expose /predict publicly, wire health checks
+
+---
+
+### What I built / did today
+- Created ECS cluster `mlops-fraud-pipeline` (Fargate)
+- Wrote task definition `mlops-fraud-pipeline` — 0.25 vCPU, 0.5GB RAM, port 8000
+- Deployed service `fraud-detection-service` — running on public IP 18.220.17.19
+- Verified `/predict` endpoint live and returning correct predictions
+
+### Decisions made and WHY
+**Decision**:
+**Why**:
+**Alternatives considered**:
+
+---
+
+### What broke
+**Problem**:
+**Error**:
+**Fix / Status**:
+
+---
+
+### Blocked on
+**Blocked on**: Nothing — Stage 2b fully complete including ECS.
+
+---
+
+### Next session
+**Next action**: Stage 4 — wire Prometheus scraping to FastAPI /metrics, set up Grafana dashboard
+
+---
+
 ## 2026-03-13 Friday
 **Stage**: Stage 2b — COMPLETE
 **Branch**: `main`
