@@ -271,3 +271,24 @@
 **Blockers**: None — Stage 2b fully complete
 **Next session**: Stage 4 — wire Prometheus scraping to FastAPI /metrics, set up Grafana dashboard
 **Interview Q**: Your ECS task has 0.25 vCPU and 0.5GB RAM — how would you decide when to scale up, and what metrics would you watch?
+
+## Session 2026-03-22 22:33
+
+**Pre-session state**:
+- Branch: `main`
+- Last commit: `348d1af devlog: update 2026-03-13 entry — Stage 2b fully complete incl. ECS`
+- Modified files: none
+- Untracked files: `AWSCLIV2.pkg`
+
+**Picked up from last session**: Stage 4 — wire Prometheus to scrape metrics from FastAPI, build Grafana dashboard showing prediction rate, fraud rate, latency
+
+**Goal**: [to be filled by user]
+
+**Work log**:
+<!-- appended during session -->
+
+**Files changed**: <!-- filled at /stop -->
+**Decisions made**: <!-- filled at /stop -->
+**Blockers**: <!-- filled at /stop -->
+**Next session**: <!-- filled at /stop -->
+**Interview Q**: <!-- filled at /stop -->

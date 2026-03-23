@@ -10,11 +10,13 @@ services:
     volumes:
       - ./src:/app/src          # live reload in dev
       - ./models:/app/models    # model artifacts
+      - ~/.aws:/root/.aws:ro    # AWS credentials for S3 prediction logging
     environment:
       - MODEL_PATH=/app/models/model.joblib
       - MLFLOW_TRACKING_URI=http://mlflow:5000
     depends_on:
       - prometheus
+      - pushgateway
       - mlflow
     command: uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
 
@@ -36,6 +38,12 @@ services:
       --backend-store-uri /mlflow/mlruns
       --default-artifact-root s3://mlops-fraud-pipeline-artifacts-nanthan/mlflow-artifacts"
 
+  # ── Prometheus Pushgateway ──
+  pushgateway:
+    image: prom/pushgateway:latest
+    ports:
+      - "9091:9091"
+
   # ── Prometheus metrics scraper ──
   prometheus:
     image: prom/prometheus:latest
@@ -53,6 +61,7 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
       - grafana-storage:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning
     depends_on:
       - prometheus
 

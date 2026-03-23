@@ -5,6 +5,43 @@
 
 <!-- ENTRIES BELOW — newest at top -->
 
+## 2026-03-22 Sunday
+**Stage**: Stage 4 — Monitoring (Prometheus + Grafana + Evidently)
+**Branch**: `main`
+**Last commit**: 348d1af devlog: update 2026-03-13 entry — Stage 2b fully complete incl. ECS
+
+### Picked up from last session
+> Stage 4 — wire Prometheus scraping to FastAPI /metrics, set up Grafana dashboard
+
+---
+
+### What I built / did today
+-
+
+### Decisions made and WHY
+**Decision**:
+**Why**:
+**Alternatives considered**:
+
+---
+
+### What broke
+**Problem**:
+**Error**:
+**Fix / Status**:
+
+---
+
+### Blocked on
+**Blocked on**:
+
+---
+
+### Next session
+**Next action**:
+
+---
+
 ## 2026-03-20 Friday
 **Stage**: Stage 4 — Monitoring (Prometheus + Grafana)
 **Branch**: `main`

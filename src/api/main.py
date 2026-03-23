@@ -2,10 +2,16 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import BaseModel
+from src.api.monitoring import fraud_predictions_total, prediction_probability, prediction_requests_total
+import boto3
+import datetime
 import joblib
+import json
+import logging
 import numpy as np
 import os
-import logging
+import threading
+import uuid
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -131,6 +137,33 @@ def predict(transaction: TransactionFeatures):
     fraud_prob = float(model.predict_proba(features)[0][1])
 
     logger.info(f"Prediction: {prediction} | Fraud probability: {fraud_prob:.4f} | Amount: {transaction.Amount}")
+
+    # ── Custom metrics ──
+    prediction_requests_total.inc()
+    fraud_predictions_total.labels(result="fraud" if prediction else "legit").inc()
+    prediction_probability.observe(fraud_prob)
+
+    # ── S3 prediction log (best-effort, non-blocking) ──
+    def _log_to_s3():
+        try:
+            record = {
+                "timestamp": datetime.datetime.utcnow().isoformat(),
+                "prediction": prediction,
+                "fraud_probability": fraud_prob,
+                "Amount": transaction.Amount,
+                **{f"V{i}": getattr(transaction, f"V{i}") for i in range(1, 29)},
+            }
+            date_str = datetime.datetime.utcnow().strftime("%Y-%m-%d")
+            s3 = boto3.client("s3")
+            s3.put_object(
+                Bucket="mlops-fraud-pipeline-artifacts-nanthan",
+                Key=f"prediction-logs/date={date_str}/{uuid.uuid4()}.jsonl",
+                Body=json.dumps(record) + "\n",
+            )
+        except Exception as e:
+            logger.warning(f"S3 prediction log failed: {e}")
+
+    threading.Thread(target=_log_to_s3, daemon=True).start()
 
     return PredictionResponse(
         prediction=prediction,

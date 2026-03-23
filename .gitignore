@@ -12,6 +12,7 @@ data/raw/*
 data/processed/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
+!data/processed/reference.csv
 
 # Models — tracked by MLflow, not git
 models/
