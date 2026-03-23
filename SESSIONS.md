@@ -282,13 +282,24 @@
 
 **Picked up from last session**: Stage 4 — wire Prometheus to scrape metrics from FastAPI, build Grafana dashboard showing prediction rate, fraud rate, latency
 
-**Goal**: [to be filled by user]
+**Goal**: Stage 4 — wire Prometheus custom metrics, S3 prediction logging, Evidently drift detection, Grafana dashboard
 
 **Work log**:
-<!-- appended during session -->
+- Added evidently==0.7.20, prometheus-client, boto3 to requirements.txt (fixed numpy pin conflict and stale package versions along the way)
+- Created src/api/monitoring.py — fraud_predictions_total Counter (labelled fraud/legit), prediction_probability Histogram, prediction_requests_total Counter
+- Updated src/api/main.py — custom metrics updated on every /predict call; each prediction logged to S3 at prediction-logs/date=YYYY-MM-DD/<uuid>.jsonl in a background thread
+- Created scripts/generate_reference.py — stratified 5000-row sample from creditcard.csv, saved to data/processed/reference.csv
+- Updated .gitignore to commit reference.csv
+- Added pushgateway service to docker-compose.yml (port 9091), added scrape job with honor_labels: true to docker/prometheus.yml
+- Created scripts/drift_check.py — reads today's S3 partition, runs Evidently DataDriftPreset vs reference.csv, pushes drift_dataset_drift_detected and drift_share_of_drifted_columns to Pushgateway. Supports --date flag.
+- Created Grafana provisioning: datasources/prometheus.yaml, dashboards/dashboards.yaml, dashboards/fraud-monitoring.json (5-panel dashboard)
+- Mounted ./docker/grafana/provisioning into grafana service
+- Fixed evidently 0.7.x API (module paths, Snapshot return, dict structure)
+- Fixed S3 credentials in container by mounting ~/.aws into app service
+- Verified: Prometheus targets UP, fraud_predictions_total visible, 20 predictions logged to S3, drift check processes predictions, Grafana dashboard auto-loads
 
-**Files changed**: <!-- filled at /stop -->
-**Decisions made**: <!-- filled at /stop -->
-**Blockers**: <!-- filled at /stop -->
-**Next session**: <!-- filled at /stop -->
-**Interview Q**: <!-- filled at /stop -->
+**Files changed**: `requirements.txt`, `src/api/main.py`, `src/api/monitoring.py` (new), `scripts/generate_reference.py` (new), `scripts/drift_check.py` (new), `data/processed/reference.csv` (new), `.gitignore`, `docker-compose.yml`, `docker/prometheus.yml`, `docker/grafana/provisioning/datasources/prometheus.yaml` (new), `docker/grafana/provisioning/dashboards/dashboards.yaml` (new), `docker/grafana/provisioning/dashboards/fraud-monitoring.json` (new)
+**Decisions made**: S3 over CSV/SQLite for prediction logs (production-correct); one object per prediction with uuid key (no native S3 append, Hive partitioning for Athena); Pushgateway for drift metrics (batch job can't be scraped after exit); honor_labels: true to preserve pushed job labels; reference.csv committed (stable 5000-row snapshot); background thread for S3 write (keeps /predict latency clean)
+**Blockers**: None — Stage 4 complete
+**Next session**: Stage 5 — Grafana alerting rules on fraud rate spike and drift threshold breach, Slack or email alert routing, incident simulation write-up
+**Interview Q**: Your drift check script pushes metrics to a Pushgateway instead of exposing a /metrics endpoint — why, and what are the tradeoffs of the Pushgateway pattern?

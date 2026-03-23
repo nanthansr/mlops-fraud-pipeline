@@ -16,29 +16,48 @@
 ---
 
 ### What I built / did today
--
+- `src/api/monitoring.py` — three custom Prometheus metrics: fraud_predictions_total (Counter, label=result), prediction_probability (Histogram, 0.0-1.0 buckets), prediction_requests_total (Counter)
+- Updated `src/api/main.py` — increments all three metrics on /predict; logs each prediction to S3 at `prediction-logs/date=YYYY-MM-DD/<uuid>.jsonl` in a daemon thread (non-blocking, best-effort)
+- `scripts/generate_reference.py` — stratified 5000-row sample from creditcard.csv → data/processed/reference.csv
+- `scripts/drift_check.py` — reads today's S3 partition, runs Evidently DataDriftPreset vs reference.csv, pushes two Gauges to Pushgateway. --date flag for testing.
+- Added Pushgateway to docker-compose.yml and prometheus.yml scrape config (honor_labels: true)
+- Full Grafana provisioning: datasource YAML, dashboard provider YAML, 5-panel dashboard JSON (auto-loads on container start)
+- Fixed requirements.txt: numpy pin was stale (1.26.4 → >=2.0), imbalanced-learn 0.12.2 had numpy==2.0.0rc1 as build dep (bug), updated all pins to match venv
+- Mounted ~/.aws into app container so S3 writes work from Docker
 
 ### Decisions made and WHY
-**Decision**:
-**Why**:
-**Alternatives considered**:
+**Decision**: One S3 object per prediction (uuid key) under Hive partition `date=YYYY-MM-DD/`
+**Why**: S3 has no native append. Read-modify-write is not atomic. One object per record is the standard pattern — Athena auto-partitions on the `date=` prefix.
+**Alternatives considered**: CSV/SQLite (local only, not durable), Kinesis Firehose (adds infra cost, overkill for this volume)
+
+**Decision**: Pushgateway for drift metrics instead of a long-running exporter
+**Why**: drift_check.py is a batch job that exits after running. Prometheus's pull model can't scrape a dead process. Pushgateway holds the last known values until overwritten.
+**Alternatives considered**: Write metrics to a file and have a sidecar expose them — more complex with no real benefit at this scale
 
 ---
 
 ### What broke
-**Problem**:
-**Error**:
-**Fix / Status**:
+**Problem**: evidently.metric_preset module not found
+**Error**: `ModuleNotFoundError: No module named 'evidently.metric_preset'`
+**Fix**: evidently 0.7.x moved the import — `from evidently.presets import DataDriftPreset` and `from evidently import Report`
+
+**Problem**: evidently 0.7.x Report.run() returns Snapshot, not in-place mutation
+**Error**: `AttributeError: as_dict()` — Snapshot has `dict()` not `as_dict()`
+**Fix**: `snapshot = report.run(...)` then `snapshot.dict()`. Dict structure also changed — no `dataset_drift` bool, derived from `DriftedColumnsCount.value["share"] >= drift_share`
+
+**Problem**: S3 writes silently failing in Docker container
+**Error**: `WARNING: S3 prediction log failed: Unable to locate credentials`
+**Fix**: Added `~/.aws:/root/.aws:ro` volume mount to app service in docker-compose.yml
 
 ---
 
 ### Blocked on
-**Blocked on**:
+**Blocked on**: Nothing — Stage 4 complete.
 
 ---
 
 ### Next session
-**Next action**:
+**Next action**: Stage 5 — Grafana alerting rules on fraud rate spike and drift threshold breach, Slack or email alert routing, incident simulation write-up
 
 ---
 
