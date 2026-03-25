@@ -5,6 +5,56 @@
 
 <!-- ENTRIES BELOW — newest at top -->
 
+## 2026-03-25 Wednesday
+**Stage**: Stage 5 — AIOps (alerting + anomaly detection)
+**Branch**: `main`
+**Last commit**: 516331c devlog: 2026-03-22 session notes — Stage 4 complete
+
+### Picked up from last session
+> Stage 5 — Grafana alerting rules on fraud rate spike and drift threshold breach, Slack or email alert routing, incident simulation write-up
+
+---
+
+### What I built / did today
+- Grafana SMTP config in docker-compose.yml — env vars loaded from .env, Gmail app password
+- `docker/grafana/provisioning/alerting/contact-points.yaml` — fraud-pipeline-email contact point
+- `docker/grafana/provisioning/alerting/alert-rules.yaml` — Fraud Rate Spike and Data Drift Warning rules with full A→B→C pipeline (query → reduce → threshold)
+- `scripts/simulate_incident.py` — two incident types: fraud_spike and distribution_shift
+- `docs/incident-simulation.md` — portfolio-grade incident documentation
+- README.md — Stages 4 and 5 marked complete, Monitoring & alerting section with threshold rationale
+
+### Decisions made and WHY
+**Decision**: ignoring(result) in fraud rate PromQL
+**Why**: fraud_predictions_total carries a result="fraud" label that prediction_requests_total doesn't have. PromQL binary division requires matching label sets — without ignoring(result) the division returns empty regardless of traffic.
+**Alternatives considered**: Rename the metric to drop the label (would break Stage 4 Grafana dashboard panels)
+
+**Decision**: For: 1m on Fraud Rate Spike, For: 0m on Data Drift Warning
+**Why**: A single burst of test traffic can spike the fraud rate transiently — 1m sustained prevents false positives. Drift check is a batch job that only runs periodically, so there's no transient noise to filter.
+**Alternatives considered**: For: 0m on both — rejected because the fraud spike test itself would have triggered an alert during development
+
+---
+
+### What broke
+**Problem**: Grafana alert rules kept showing stale version after YAML changes
+**Error**: "looks like time series data, only reduced data can be alerted on" — persisted even after fixing the YAML
+**Fix**: Grafana does not update provisioned rules on restart if the rule already exists in the SQLite DB. Fix: `docker compose stop grafana && docker compose rm -f grafana && docker volume rm mlops-fraud-pipeline_grafana-storage` then restart. Required this 3 times during the session.
+
+**Problem**: Fraud Rate Spike alert showing "No data" despite traffic
+**Error**: rate(fraud)[5m] / rate(total)[5m] returned empty — label mismatch between the two counters
+**Fix**: Added ignoring(result) to the division expression
+
+---
+
+### Blocked on
+**Blocked on**: Nothing — Stage 5 complete.
+
+---
+
+### Next session
+**Next action**: Stage 6 — portfolio polish: clean README with architecture diagram, Grafana panel labels and descriptions, incident simulation demo write-up, LinkedIn post
+
+---
+
 ## 2026-03-22 Sunday
 **Stage**: Stage 4 — Monitoring (Prometheus + Grafana + Evidently)
 **Branch**: `main`

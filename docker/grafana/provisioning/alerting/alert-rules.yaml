@@ -1,0 +1,122 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: fraud-pipeline-alerts
+    folder: MLOps Alerts
+    interval: 1m
+    rules:
+
+      - uid: fraud-rate-spike
+        title: "Fraud Rate Spike"
+        condition: C
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange:
+              from: 600
+              to: 0
+            model:
+              expr: rate(fraud_predictions_total{result="fraud"}[5m]) / ignoring(result) rate(prediction_requests_total[5m])
+              refId: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange:
+              from: 600
+              to: 0
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
+              settings:
+                mode: dropNN
+          - refId: C
+            datasourceUid: __expr__
+            relativeTimeRange:
+              from: 600
+              to: 0
+            model:
+              type: threshold
+              refId: C
+              expression: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params:
+                      - 0.005
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - B
+                  reducer:
+                    type: last
+                  type: query
+        for: 1m
+        annotations:
+          summary: "Fraud rate has exceeded 3x baseline (0.5%). Current rate: {{ $value }}"
+        noDataState: NoData
+        execErrState: Alerting
+        isPaused: false
+        notification_settings:
+          receiver: fraud-pipeline-email
+
+      - uid: data-drift-warning
+        title: "Data Drift Warning"
+        condition: C
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange:
+              from: 600
+              to: 0
+            model:
+              expr: drift_share_of_drifted_columns
+              refId: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange:
+              from: 600
+              to: 0
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
+              settings:
+                mode: dropNN
+          - refId: C
+            datasourceUid: __expr__
+            relativeTimeRange:
+              from: 600
+              to: 0
+            model:
+              type: threshold
+              refId: C
+              expression: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params:
+                      - 0.5
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - B
+                  reducer:
+                    type: last
+                  type: query
+        for: 0m
+        annotations:
+          summary: "More than 50% of input features are drifting from training distribution. Current: {{ $value }}"
+        noDataState: NoData
+        execErrState: Alerting
+        isPaused: false
+        notification_settings:
+          receiver: fraud-pipeline-email

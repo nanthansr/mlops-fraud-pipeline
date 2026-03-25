@@ -1,0 +1,10 @@
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: fraud-pipeline-email
+    receivers:
+      - uid: fraud-pipeline-email
+        type: email
+        settings:
+          addresses: ${GRAFANA_SMTP_USER}

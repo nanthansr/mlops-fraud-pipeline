@@ -303,3 +303,32 @@
 **Blockers**: None — Stage 4 complete
 **Next session**: Stage 5 — Grafana alerting rules on fraud rate spike and drift threshold breach, Slack or email alert routing, incident simulation write-up
 **Interview Q**: Your drift check script pushes metrics to a Pushgateway instead of exposing a /metrics endpoint — why, and what are the tradeoffs of the Pushgateway pattern?
+
+## Session 2026-03-25 00:00
+
+**Pre-session state**:
+- Branch: `main`
+- Last commit: `516331c devlog: 2026-03-22 session notes — Stage 4 complete`
+- Modified files: none
+- Untracked files: `AWSCLIV2.pkg`
+
+**Picked up from last session**: Stage 5 — Grafana alerting rules on fraud rate spike and drift threshold breach, Slack or email alert routing, incident simulation write-up
+
+**Goal**: Stage 5 — AIOps alerting layer: fraud rate spike detection, data drift alerting, email notifications, incident simulation
+
+**Work log**:
+- Configured Grafana SMTP via docker-compose.yml env vars, credentials loaded from .env file (Gmail app password)
+- Created docker/grafana/provisioning/alerting/contact-points.yaml — email contact point named fraud-pipeline-email
+- Created docker/grafana/provisioning/alerting/alert-rules.yaml — two rules: Fraud Rate Spike (fraud rate > 0.5% for 1m) and Data Drift Warning (share_of_drifted_columns > 0.5, fires immediately)
+- Debugged three provisioning issues: missing relativeTimeRange fields, missing reduce step (A→B→C pipeline), PromQL label mismatch requiring ignoring(result) on division
+- Learned that Grafana does not update provisioned rules on restart — volume wipe required each time YAML changes
+- Created scripts/simulate_incident.py — fraud_spike (50 high-fraud-feature requests, 100% fraud rate) and distribution_shift (Amount 100x, V1-V5 shifted +5.0)
+- Ran full end-to-end simulation: fraud spike → Prometheus metrics confirmed → alert fired; drift check → Pushgateway metrics confirmed → drift alert fired
+- Created docs/incident-simulation.md — documents both incidents, detection, remediation steps
+- Updated README.md — Stage 4 and 5 marked complete, Monitoring & alerting section added with threshold rationale
+
+**Files changed**: `docker-compose.yml`, `.env` (new), `docker/grafana/provisioning/alerting/contact-points.yaml` (new), `docker/grafana/provisioning/alerting/alert-rules.yaml` (new), `scripts/simulate_incident.py` (new), `docs/incident-simulation.md` (new), `README.md`, `DEVLOG.md`, `SESSIONS.md`
+**Decisions made**: Gmail SMTP with app password for real email delivery; fraud threshold 0.5% (3x dataset baseline of 0.17%); drift threshold 50% (systemic vs noise); For: 1m on fraud spike to avoid false positives from single bursts; For: 0m on drift (batch job, no sustained window needed); ignoring(result) in PromQL to handle label set mismatch between fraud counter and total counter
+**Blockers**: None — Stage 5 complete
+**Next session**: Stage 6 — portfolio polish: clean README with architecture diagram, Grafana panel labels and descriptions, incident simulation demo write-up, LinkedIn post
+**Interview Q**: Your fraud rate alert uses a 1-minute sustained window before firing — why not fire immediately, and what problem does the sustained window solve?

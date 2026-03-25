@@ -32,8 +32,8 @@ Built cross-platform — runs identically on Mac and Windows via Docker.
 - [x] **Stage 2a** — CI/CD: GitHub Actions — lint + test + docker build
 - [x] **Stage 3** — MLflow: experiment tracking + model registry (EC2-hosted, S3 artifacts)
 - [x] **Stage 2b** — CI/CD: ECR push + ECS deploy (wired to MLflow registry)
-- [ ] **Stage 4** — Monitoring: Prometheus metrics + Grafana dashboard
-- [ ] **Stage 5** — AIOps: anomaly detection on build times + model drift alerts
+- [x] **Stage 4** — Monitoring: Prometheus metrics + Grafana dashboard
+- [x] **Stage 5** — AIOps: fraud rate spike detection, data drift alerting, email notifications, incident simulation
 - [ ] **Stage 6** — Polish: clean README, architecture diagram, demo video, LinkedIn post
 
 > **Why Stage 2b comes after Stage 3**: ECR/ECS deploy is deferred until MLflow is in place.
@@ -85,6 +85,17 @@ docker compose run app pytest tests/ -v
                                                        ↓
                                               [Slack/Email Alert]
 ```
+
+## Monitoring & alerting
+
+Two Grafana alert rules are provisioned via `docker/grafana/provisioning/alerting/`:
+
+| Rule | Condition | Why this threshold |
+|------|-----------|--------------------|
+| Fraud Rate Spike | `rate(fraud_predictions_total{result="fraud"}[5m]) / ignoring(result) rate(prediction_requests_total[5m]) > 0.005` | 0.5% is 3x the dataset's baseline fraud rate of 0.17% — high enough to suppress noise from normal variance, low enough to catch a real spike before it compounds |
+| Data Drift Warning | `drift_share_of_drifted_columns > 0.5` | More than half the input features drifting simultaneously indicates a systemic upstream change (pipeline bug, schema shift) rather than isolated noise in a single feature |
+
+Both rules route to `fraud-pipeline-email` via SMTP. See `docs/incident-simulation.md` for a recorded end-to-end test of both alerts.
 
 ## Dataset
 
