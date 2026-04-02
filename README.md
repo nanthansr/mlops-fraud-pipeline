@@ -1,46 +1,64 @@
-# MLOps CI/CD Pipeline — Credit Card Fraud Detection
+# MLOps Fraud Detection Pipeline
 
 ![CI](https://github.com/nanthansr/mlops-fraud-pipeline/actions/workflows/ci-cd.yml/badge.svg)
 
-> End-to-end MLOps pipeline: train → serve → monitor → detect anomalies → alert
+This repository implements a full fraud detection MLOps system around the ULB credit card dataset, from model training and MLflow registry promotion to FastAPI inference, Prometheus and Grafana observability, drift checks with Evidently, and incident-driven alerting; the focus is production behavior under monitoring and deployment constraints, not just model score reporting.
 
-## What This Is
+## Architecture
 
-A production-grade MLOps pipeline built on credit card fraud detection.
-Demonstrates the full stack an MLOps engineer is expected to own:
-model training, FastAPI serving, Docker containerization, GitHub Actions CI/CD,
-MLflow experiment tracking, Prometheus + Grafana monitoring, and an AIOps anomaly detection layer.
+[View interactive architecture diagram](https://nanthansr.github.io/mlops-fraud-pipeline/architecture.html)
 
-Built cross-platform — runs identically on Mac and Windows via Docker.
+```
+[Kaggle Dataset] → [Feature Engineering] → [XGBoost Model]
+                                                  ↓
+                                          [MLflow Registry]
+                                                  ↓
+                                [FastAPI Prediction Service]
+                                          ↓           ↓
+                              [GitHub Actions]    [Prometheus]
+                                    ↓                 ↓
+                             [AWS ECR/ECS]      [Grafana Dashboard]
+                                                       ↓
+                                           [AIOps Anomaly Detector]
+                                                       ↓
+                                              [Slack/Email Alert]
+```
+
+- Kaggle dataset: fixed public benchmark with extreme class imbalance (0.17% fraud) keeps evaluation and threshold logic grounded in a reproducible baseline.
+- Feature engineering: Time is dropped and Amount is scaled to match PCA feature ranges so serving-time distributions stay aligned with training assumptions.
+- XGBoost model: class weighting via scale_pos_weight handles 577:1 imbalance without synthetic oversampling drift.
+- MLflow registry: CI fetches a named champion model version instead of retraining blindly during every deploy.
+- FastAPI service: low-latency online inference exposes both prediction APIs and machine metrics from one deployable unit.
+- GitHub Actions: test-first pipeline blocks image push when API behavior regresses.
+- AWS ECR and ECS: immutable image builds and managed runtime make rollback and redeploy deterministic.
+- Prometheus and Grafana: request, fraud-rate, confidence, and drift metrics are observable in one dashboard.
+- AIOps anomaly layer: batch drift checks complement request metrics to catch silent input-distribution failures.
+- Alert channel: SMTP route from Grafana turns threshold breaches into on-call signals.
 
 ## Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Model | scikit-learn / XGBoost — fraud classification (imbalanced dataset) |
-| API | FastAPI + Uvicorn |
-| Containerization | Docker + Docker Compose |
-| CI/CD | GitHub Actions → AWS ECR → AWS ECS |
-| Experiment Tracking | MLflow |
-| Monitoring | Prometheus + Grafana |
-| Cloud | AWS (ECR, ECS, CloudWatch) |
-| Language | Python 3.11 |
+| Layer | Technology | Why not X |
+|-------|------------|-----------|
+| Model | XGBoost with scale_pos_weight | Logistic regression was rejected because non-linear feature interaction is important in anonymized PCA space and recall collapses under extreme imbalance. |
+| API | FastAPI + Uvicorn | Flask was rejected because strict request typing and automatic OpenAPI schema were required for predictable MLOps handoff. |
+| Drift detection | Evidently DataDriftPreset | Custom drift logic was rejected to avoid under-tested statistical code and inconsistent thresholds across features. |
+| Experiment tracking | MLflow 3.x registry + aliases | Local-only artifact files were rejected because promotion and rollback need explicit version metadata. |
+| Monitoring | Prometheus + Grafana + Pushgateway | CloudWatch-only monitoring was rejected for this stack because request, model, and batch drift metrics needed one query language and one dashboard surface. |
+| Deployment | Docker Compose local, AWS ECS/Fargate target | EC2-backed ECS was rejected to avoid instance patching and scaling overhead for a service-oriented inference workload. |
+| Language | Python 3.11 | Older Python releases were rejected due to dependency compatibility for modern FastAPI, MLflow, and Evidently versions. |
 
-## Project Stages
+## Monitoring and alerting
 
-- [x] **Stage 1** — Foundation: model + FastAPI + Docker (local)
-- [x] **Stage 2a** — CI/CD: GitHub Actions — lint + test + docker build
-- [x] **Stage 3** — MLflow: experiment tracking + model registry (EC2-hosted, S3 artifacts)
-- [x] **Stage 2b** — CI/CD: ECR push + ECS deploy (wired to MLflow registry)
-- [x] **Stage 4** — Monitoring: Prometheus metrics + Grafana dashboard
-- [x] **Stage 5** — AIOps: fraud rate spike detection, data drift alerting, email notifications, incident simulation
-- [ ] **Stage 6** — Polish: clean README, architecture diagram, demo video, LinkedIn post
+Grafana alert rules are provisioned from docker/grafana/provisioning/alerting.
 
-> **Why Stage 2b comes after Stage 3**: ECR/ECS deploy is deferred until MLflow is in place.
-> CI will pull a registered, versioned model from MLflow registry rather than re-training blind on every push.
-> This is the industry-standard order: track → register → deploy.
+| Rule | Condition | Threshold reasoning |
+|------|-----------|---------------------|
+| Fraud Rate Spike | rate(fraud_predictions_total{result="fraud"}[5m]) / ignoring(result) rate(prediction_requests_total[5m]) > 0.005 | Baseline fraud prevalence in this dataset is 0.17%; 0.5% is roughly 3x baseline, high enough to avoid noise and low enough to catch degradation early. |
+| Data Drift Warning | drift_share_of_drifted_columns > 0.5 | If over half of features drift together, the issue is usually upstream data change rather than random variance, so alerting should be immediate. |
 
-## Running Locally
+Both rules route to fraud-pipeline-email through SMTP.
+
+## Running locally
 
 ```bash
 # Clone and enter
@@ -63,57 +81,55 @@ open http://localhost:8000/docs
 open http://localhost:3000  # admin / admin
 
 # Run tests
-docker compose run app pytest tests/ -v
+pytest tests/ -v
 ```
 
-## Architecture
+### Simulating incidents
 
-[→ View interactive architecture diagram](https://nanthansr.github.io/mlops-fraud-pipeline/architecture.html)
-
-```
-[Kaggle Dataset] → [Feature Engineering] → [XGBoost Model]
-                                                  ↓
-                                          [MLflow Registry]
-                                                  ↓
-                                [FastAPI Prediction Service]
-                                          ↓           ↓
-                              [GitHub Actions]    [Prometheus]
-                                    ↓                 ↓
-                             [AWS ECR/ECS]      [Grafana Dashboard]
-                                                       ↓
-                                           [AIOps Anomaly Detector]
-                                                       ↓
-                                              [Slack/Email Alert]
+```bash
+python scripts/simulate_incident.py --incident fraud_spike
+python scripts/simulate_incident.py --incident distribution_shift
 ```
 
-## Monitoring & alerting
+Expected output patterns:
+- fraud_spike: prints a high observed fraud rate, typically far above the 0.5% alert threshold.
+- distribution_shift: prints Amount range 5000 to 15000 and V1 to V5 shift +5.0, then drift checks should report high drift share.
 
-Two Grafana alert rules are provisioned via `docker/grafana/provisioning/alerting/`:
+## Key engineering decisions
 
-| Rule | Condition | Why this threshold |
-|------|-----------|--------------------|
-| Fraud Rate Spike | `rate(fraud_predictions_total{result="fraud"}[5m]) / ignoring(result) rate(prediction_requests_total[5m]) > 0.005` | 0.5% is 3x the dataset's baseline fraud rate of 0.17% — high enough to suppress noise from normal variance, low enough to catch a real spike before it compounds |
-| Data Drift Warning | `drift_share_of_drifted_columns > 0.5` | More than half the input features drifting simultaneously indicates a systemic upstream change (pipeline bug, schema shift) rather than isolated noise in a single feature |
+- Decision: Pull champion model from MLflow registry in CI before image build | Why: deploys a reviewed model artifact, not an ad-hoc retrain | Rejected: train-on-every-push build job.
+- Decision: Use PR-AUC as primary training metric | Why: positive class is 0.17% so ROC-AUC can hide poor fraud precision/recall tradeoff | Rejected: accuracy-only and ROC-AUC-only reporting.
+- Decision: One S3 object per prediction under date partition | Why: S3 has no safe append semantics and partitioned objects support replay and drift jobs | Rejected: append-in-place file updates.
+- Decision: Push batch drift metrics via Pushgateway | Why: drift job is short-lived and Prometheus cannot scrape a process after exit | Rejected: long-running fake exporter just for batch jobs.
+- Decision: Alert on fraud rate at 0.5% | Why: this is about 3x baseline 0.17% and reduces normal variance noise | Rejected: ultra-low thresholds that page on normal fluctuation.
+- Decision: Drift alert threshold above 50% drifted columns | Why: broad cross-feature shift usually indicates upstream data quality issue | Rejected: single-feature drift paging.
+- Decision: Keep inference path stable and add JSON health summary endpoint | Why: integrates with external status tooling without changing predict semantics | Rejected: heavy refactor of serving flow.
 
-Both rules route to `fraud-pipeline-email` via SMTP. See `docs/incident-simulation.md` for a recorded end-to-end test of both alerts.
+## Interview Q and A
+
+1. Why PR-AUC over ROC-AUC for this dataset?
+PR-AUC tracks precision-recall behavior on the minority fraud class directly, which is the operational objective when only 0.17% of transactions are fraud.
+
+2. Why one S3 object per prediction instead of appending?
+S3 object append is not atomic and concurrent writes are unsafe; one object per request with date partitioning is reliable and query-friendly.
+
+3. Why Pushgateway for drift metrics?
+Drift detection runs as a batch script and exits, so Pushgateway holds last computed values for Prometheus scraping.
+
+4. How does CI/CD prevent a bad model from deploying?
+Tests must pass before image push, and deploy artifact is fetched from MLflow champion alias rather than retraining an unknown candidate on each commit.
+
+5. What would you change first for real production?
+Move from SMTP-only alerting to incident routing with escalation policy and add authenticated model governance controls around promotion and rollback.
 
 ## Dataset
 
-**Credit Card Fraud Detection** — Kaggle
-- 284,807 transactions, 492 fraudulent (0.17% — highly imbalanced)
-- Features: V1–V28 (PCA-transformed), Amount, Time
-- Target: Class (0 = legitimate, 1 = fraud)
-- Key challenge: imbalanced classes — requires SMOTE or class weighting
+Credit Card Fraud Detection on Kaggle:
+- 284,807 transactions with 492 fraud cases.
+- Features V1 to V28 plus Amount and Time.
+- Target class: 0 legit, 1 fraud.
 
-Download: https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud
-
-## Interview Talking Points (fill in as you build)
-
-- Why XGBoost over logistic regression for this problem?
-- How did you handle class imbalance?
-- What happens if model accuracy drops in production?
-- How does your CI/CD pipeline prevent a bad model from deploying?
-- What metrics are you monitoring and why those specifically?
+Dataset link: https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud
 
 ## Author
 

@@ -19,6 +19,7 @@ OUTPUT_DIR = "data/raw"
 
 
 def main():
+    """Download and validate the Kaggle credit card fraud dataset locally."""
     # Check kaggle is installed
     try:
         import kaggle

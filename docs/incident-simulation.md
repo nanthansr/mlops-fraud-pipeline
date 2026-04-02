@@ -11,11 +11,11 @@ This document records two synthetic incidents run against the fraud detection pi
 
 ### What was simulated
 
-50 transactions with feature values strongly associated with fraud were sent to the `/predict` endpoint. All 50 were classified as fraud (100% fraud rate), well above the 0.5% alert threshold.
+50 transactions with feature values strongly associated with fraud were sent to the `/predict` endpoint. The script uses these exact ranges from `scripts/simulate_incident.py`: V1 and V3 in -5.0 to -3.0, V4 and V11 in +3.0 to +5.0, V10 in -5.0 to -3.0, V14 in -7.0 to -4.0, and Amount in 1.0 to 300.0. All 50 were classified as fraud (100% fraud rate), well above the 0.5% alert threshold.
 
 ### Features manipulated
 
-The ULB credit card dataset's V-features are PCA components — their original meaning is anonymised, but their correlation with fraud is well-documented. The following were targeted:
+The ULB credit card dataset's V-features are PCA components - their original meaning is anonymised, but their correlation with fraud is well-documented. V14, V1, and V3 are among the highest-importance fraud-separating components in this dataset family, so the simulation pushes them hardest:
 
 | Feature | Direction | Reason |
 |---------|-----------|--------|
@@ -24,7 +24,7 @@ The ULB credit card dataset's V-features are PCA components — their original m
 | V4, V11 | Strongly positive (+3 to +5) | Strong positive correlation with fraud label |
 | V10 | Strongly negative (−3 to −5) | Significant fraud predictor |
 
-These values were drawn from observed fraud cases in the dataset and push the XGBoost model well past its decision boundary.
+These values were chosen to emulate a high-risk region of feature space and push the XGBoost model past its normal decision boundary.
 
 ### What the monitoring stack detected
 
@@ -53,7 +53,7 @@ These values were drawn from observed fraud cases in the dataset and push the XG
 
 ### What was simulated
 
-50 transactions were sent with `Amount` values 100x above normal (5,000–15,000 vs. a training baseline of ~50) and V1–V5 shifted +5.0 outside the training distribution. This mimics a data pipeline error — for example, a currency conversion bug or a schema change in an upstream transaction feed.
+50 transactions were sent with `Amount` values 100x above normal (5,000-15,000 vs. a training baseline around 50) and V1-V5 shifted by +5.0 outside the training distribution. This mirrors a data pipeline error such as currency conversion mistakes or feature scaling regressions.
 
 ### What Evidently detected
 

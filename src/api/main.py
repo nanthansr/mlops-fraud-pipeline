@@ -12,15 +12,22 @@ import numpy as np
 import os
 import threading
 import uuid
+from typing import Any
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # ── Model loading ──
 MODEL_PATH = os.getenv("MODEL_PATH", "models/model.joblib")
+MODEL_VERSION = os.getenv("MODEL_VERSION", "0.1.0")
+PREDICTION_LOG_BUCKET = os.getenv("PREDICTION_LOG_BUCKET", "mlops-fraud-pipeline-artifacts-nanthan")
 model = None
+last_prediction_timestamp: str | None = None
+total_predictions_count = 0
+fraud_predictions_count = 0
 
 def load_model():
+    """Load the model from disk if available."""
     global model
     if os.path.exists(MODEL_PATH):
         model = joblib.load(MODEL_PATH)
@@ -107,11 +114,13 @@ class PredictionResponse(BaseModel):
 # ── Endpoints ──
 @app.get("/")
 def root():
+    """Return lightweight service status."""
     return {"status": "running", "model_loaded": model is not None}
 
 
 @app.get("/health")
 def health():
+    """Return readiness status and fail when the model is unavailable."""
     if model is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
     return {"status": "healthy", "model_loaded": True}
@@ -119,6 +128,11 @@ def health():
 
 @app.post("/predict", response_model=PredictionResponse)
 def predict(transaction: TransactionFeatures):
+    """Run model inference for a single transaction and emit monitoring signals."""
+    global last_prediction_timestamp
+    global total_predictions_count
+    global fraud_predictions_count
+
     if model is None:
         raise HTTPException(status_code=503, detail="Model not loaded — run train.py first")
 
@@ -135,6 +149,11 @@ def predict(transaction: TransactionFeatures):
 
     prediction = int(model.predict(features)[0])
     fraud_prob = float(model.predict_proba(features)[0][1])
+    now_utc = datetime.datetime.utcnow()
+    total_predictions_count += 1
+    if prediction == 1:
+        fraud_predictions_count += 1
+    last_prediction_timestamp = now_utc.isoformat()
 
     logger.info(f"Prediction: {prediction} | Fraud probability: {fraud_prob:.4f} | Amount: {transaction.Amount}")
 
@@ -147,16 +166,16 @@ def predict(transaction: TransactionFeatures):
     def _log_to_s3():
         try:
             record = {
-                "timestamp": datetime.datetime.utcnow().isoformat(),
+                "timestamp": now_utc.isoformat(),
                 "prediction": prediction,
                 "fraud_probability": fraud_prob,
                 "Amount": transaction.Amount,
                 **{f"V{i}": getattr(transaction, f"V{i}") for i in range(1, 29)},
             }
-            date_str = datetime.datetime.utcnow().strftime("%Y-%m-%d")
+            date_str = now_utc.strftime("%Y-%m-%d")
             s3 = boto3.client("s3")
             s3.put_object(
-                Bucket="mlops-fraud-pipeline-artifacts-nanthan",
+                Bucket=PREDICTION_LOG_BUCKET,
                 Key=f"prediction-logs/date={date_str}/{uuid.uuid4()}.jsonl",
                 Body=json.dumps(record) + "\n",
             )
@@ -169,5 +188,23 @@ def predict(transaction: TransactionFeatures):
         prediction=prediction,
         fraud_probability=round(fraud_prob, 4),
         is_fraud=bool(prediction),
-        model_version="0.1.0"
+        model_version=MODEL_VERSION
     )
+
+
+@app.get("/metrics/summary")
+def metrics_summary() -> dict[str, Any]:
+    """Return a JSON snapshot of key model-health indicators for status integrations."""
+    fraud_rate = 0.0
+    if total_predictions_count > 0:
+        fraud_rate = fraud_predictions_count / total_predictions_count
+
+    return {
+        "model_loaded": model is not None,
+        "model_version": MODEL_VERSION,
+        "total_predictions": total_predictions_count,
+        "fraud_predictions": fraud_predictions_count,
+        "fraud_rate": round(fraud_rate, 6),
+        "drift_status": "unknown",
+        "last_prediction_timestamp": last_prediction_timestamp,
+    }

@@ -9,16 +9,13 @@ Saves model to models/model.joblib
 """
 
 import pandas as pd
-import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import (
     classification_report, roc_auc_score,
-    precision_recall_curve, average_precision_score
+    average_precision_score
 )
-from sklearn.pipeline import Pipeline
 from xgboost import XGBClassifier
-from imblearn.over_sampling import SMOTE
 import mlflow
 import mlflow.xgboost
 import joblib
@@ -112,6 +109,7 @@ def evaluate(model, X_test, y_test) -> dict:
 
 
 def main():
+    """Train, evaluate, and register the fraud model using MLflow."""
     # Load and prep
     df = load_data(DATA_PATH)
     X, y = prepare_features(df)

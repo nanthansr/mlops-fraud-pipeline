@@ -1,7 +1,7 @@
 import argparse
 import datetime
-import io
 import json
+import os
 import sys
 
 import boto3
@@ -10,17 +10,23 @@ from evidently import Report
 from evidently.presets import DataDriftPreset
 from prometheus_client import CollectorRegistry, Gauge, pushadd_to_gateway
 
-BUCKET = "mlops-fraud-pipeline-artifacts-nanthan"
-REFERENCE_PATH = "data/processed/reference.csv"
-PUSHGATEWAY = "localhost:9091"
+BUCKET = os.getenv("PREDICTION_LOG_BUCKET", "mlops-fraud-pipeline-artifacts-nanthan")
+REFERENCE_PATH = os.getenv("REFERENCE_PATH", "data/processed/reference.csv")
+PUSHGATEWAY = os.getenv("PUSHGATEWAY_ADDRESS", "localhost:9091")
 FEATURE_COLS = [f"V{i}" for i in range(1, 29)] + ["Amount"]
 
 
 def load_predictions(date_str: str) -> pd.DataFrame:
+    """Load one day of prediction feature records from S3."""
     s3 = boto3.client("s3")
     prefix = f"prediction-logs/date={date_str}/"
 
-    response = s3.list_objects_v2(Bucket=BUCKET, Prefix=prefix)
+    try:
+        response = s3.list_objects_v2(Bucket=BUCKET, Prefix=prefix)
+    except Exception as exc:
+        print(f"Failed to list S3 objects for {prefix}: {exc}")
+        sys.exit(1)
+
     objects = response.get("Contents", [])
 
     if not objects:
@@ -29,7 +35,11 @@ def load_predictions(date_str: str) -> pd.DataFrame:
 
     records = []
     for obj in objects:
-        body = s3.get_object(Bucket=BUCKET, Key=obj["Key"])["Body"].read().decode("utf-8")
+        try:
+            body = s3.get_object(Bucket=BUCKET, Key=obj["Key"])["Body"].read().decode("utf-8")
+        except Exception as exc:
+            print(f"Failed to read S3 object {obj['Key']}: {exc}")
+            continue
         for line in body.strip().splitlines():
             records.append(json.loads(line))
 
@@ -38,11 +48,13 @@ def load_predictions(date_str: str) -> pd.DataFrame:
 
 
 def load_reference() -> pd.DataFrame:
+    """Load the reference dataset used as a drift baseline."""
     df = pd.read_csv(REFERENCE_PATH)
     return df[FEATURE_COLS]
 
 
 def run_drift(reference: pd.DataFrame, current: pd.DataFrame) -> dict:
+    """Run Evidently drift report and return aggregate drift metrics."""
     preset = DataDriftPreset()
     report = Report(metrics=[preset])
     snapshot = report.run(current_data=current, reference_data=reference)
@@ -61,6 +73,7 @@ def run_drift(reference: pd.DataFrame, current: pd.DataFrame) -> dict:
 
 
 def push_metrics(metrics: dict, date_str: str) -> None:
+    """Push drift metrics to Pushgateway for Prometheus scraping."""
     registry = CollectorRegistry()
 
     Gauge(
@@ -75,10 +88,15 @@ def push_metrics(metrics: dict, date_str: str) -> None:
         registry=registry,
     ).set(metrics["share_of_drifted_columns"])
 
-    pushadd_to_gateway(PUSHGATEWAY, job="drift_check", registry=registry)
+    try:
+        pushadd_to_gateway(PUSHGATEWAY, job="drift_check", registry=registry)
+    except Exception as exc:
+        print(f"Failed to push metrics to Pushgateway {PUSHGATEWAY}: {exc}")
+        sys.exit(1)
 
 
 def main():
+    """Entry point for running batch drift detection for a target date."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--date", default=datetime.datetime.utcnow().strftime("%Y-%m-%d"))
     args = parser.parse_args()

@@ -28,7 +28,8 @@
           "refId": "A"
         }
       ],
-      "title": "Fraud prediction rate (per second)",
+      "description": "Baseline: 0.17% (dataset average). Alert threshold: 0.5% (3× baseline). Sustained spike indicates model degradation or upstream data issue.",
+      "title": "Live Fraud Detection Rate",
       "type": "timeseries"
     },
     {
@@ -55,7 +56,8 @@
           "refId": "A"
         }
       ],
-      "title": "Total predictions per minute",
+      "description": "Requests per second hitting the /predict endpoint. Sudden drops may indicate service health issues.",
+      "title": "Prediction Throughput",
       "type": "timeseries"
     },
     {
@@ -81,7 +83,8 @@
           "refId": "A"
         }
       ],
-      "title": "Fraud probability distribution",
+      "description": "Distribution of fraud probability scores. Healthy model shows bimodal distribution — high confidence in both directions.",
+      "title": "Model Confidence Distribution",
       "type": "timeseries"
     },
     {
@@ -126,7 +129,8 @@
           "refId": "A"
         }
       ],
-      "title": "Dataset drift detected",
+      "description": "Powered by Evidently AI. Compares live prediction inputs against training distribution baseline (5,000 row reference set).",
+      "title": "Data Drift Status",
       "type": "stat"
     },
     {
@@ -164,7 +168,8 @@
           "refId": "A"
         }
       ],
-      "title": "Share of drifted columns",
+      "description": "Alert fires above 50%. 100% during development is expected — all test requests use identical synthetic values.",
+      "title": "Feature Drift — Share of Columns",
       "type": "gauge"
     }
   ],

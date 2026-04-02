@@ -36,7 +36,10 @@ def fraud_spike(url: str, n: int = 50):
             "V14": random.uniform(-7.0, -4.0),
             "Amount": random.uniform(1.0, 300.0),
         }
-        resp = requests.post(url, json=payload, timeout=5)
+        try:
+            resp = requests.post(url, json=payload, timeout=5)
+        except requests.RequestException as exc:
+            raise RuntimeError(f"Failed request during fraud_spike simulation: {exc}") from exc
         resp.raise_for_status()
         result = resp.json()
         if result["is_fraud"]:
@@ -60,7 +63,10 @@ def distribution_shift(url: str, n: int = 50):
             "V5": BASELINE["V5"] + 5.0,
             "Amount": random.uniform(5000.0, 15000.0),
         }
-        resp = requests.post(url, json=payload, timeout=5)
+        try:
+            resp = requests.post(url, json=payload, timeout=5)
+        except requests.RequestException as exc:
+            raise RuntimeError(f"Failed request during distribution_shift simulation: {exc}") from exc
         resp.raise_for_status()
 
     print(f"[distribution_shift] Done.")
@@ -70,6 +76,7 @@ def distribution_shift(url: str, n: int = 50):
 
 
 def main():
+    """Parse arguments and execute the selected incident simulation."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--incident",

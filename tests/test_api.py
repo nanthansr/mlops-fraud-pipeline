@@ -54,3 +54,27 @@ def test_predict_missing_field():
 def test_metrics_endpoint():
     response = client.get("/metrics")
     assert response.status_code == 200
+
+
+def test_metrics_summary_endpoint_returns_schema():
+    response = client.get("/metrics/summary")
+    assert response.status_code == 200
+    data = response.json()
+    assert "model_loaded" in data
+    assert "model_version" in data
+    assert "total_predictions" in data
+    assert "fraud_predictions" in data
+    assert "fraud_rate" in data
+    assert "drift_status" in data
+    assert "last_prediction_timestamp" in data
+    assert data["drift_status"] == "unknown"
+
+
+def test_metrics_summary_updates_after_prediction_if_model_loaded():
+    prediction_response = client.post("/predict", json=SAMPLE_TRANSACTION)
+    if prediction_response.status_code == 200:
+        summary_response = client.get("/metrics/summary")
+        assert summary_response.status_code == 200
+        summary = summary_response.json()
+        assert summary["total_predictions"] >= 1
+        assert summary["last_prediction_timestamp"] is not None

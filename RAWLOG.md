@@ -5,6 +5,14 @@
 
 ---
 
+## 2026-04-02
+
+Stage 6 polish sprint today. I added a small differentiation feature (/metrics/summary) so model health can be pulled as JSON, then patched env hardcoding and error handling in the scripts that talk to S3, MLflow, Pushgateway, and API calls.
+Tests are clean (7/7). README got a full production-style rewrite, architecture write-up is now in docs/architecture.md, incident doc got aligned to actual simulation values, and Grafana panel labels are now interview-grade.
+One blocker: docker compose validation could not run because Docker daemon is down locally, so runtime boot check is pending until Docker Desktop is running.
+
+Plain explanation: Pushgateway is just a temporary metrics inbox for short batch scripts, so Prometheus can still scrape the latest drift numbers after the script exits.
+
 ## 2026-02-27 (Session 1)
 
 **What I worked on:**
