@@ -10,7 +10,8 @@ services:
     volumes:
       - ./src:/app/src          # live reload in dev
       - ./models:/app/models    # model artifacts
-      - ~/.aws:/root/.aws:ro    # AWS credentials for S3 prediction logging
+      # Mount AWS credentials for S3 prediction logging (optional, dev only)
+      # - ~/.aws:/root/.aws:ro
     environment:
       - MODEL_PATH=/app/models/model.joblib
       - MLFLOW_TRACKING_URI=http://mlflow:5000
@@ -27,7 +28,8 @@ services:
       - "5001:5000"
     volumes:
       - ./mlruns:/mlflow/mlruns      # run metadata (params, metrics) stays local
-      - ~/.aws:/root/.aws:ro         # mount host AWS credentials for S3 access
+      # Mount AWS credentials for S3 artifact access (optional, dev only)
+      # - ~/.aws:/root/.aws:ro
     environment:
       - AWS_DEFAULT_REGION
     command: >
@@ -36,7 +38,7 @@ services:
       --host 0.0.0.0
       --port 5000
       --backend-store-uri /mlflow/mlruns
-      --default-artifact-root s3://mlops-fraud-pipeline-artifacts-nanthan/mlflow-artifacts"
+      --default-artifact-root ${MLFLOW_ARTIFACT_ROOT:-/mlflow/mlruns}"
 
   # ── Prometheus Pushgateway ──
   pushgateway:
@@ -60,7 +62,7 @@ services:
     env_file:
       - .env
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin}
       - GF_SMTP_ENABLED=true
       - GF_SMTP_HOST=smtp.gmail.com:587
       - GF_SMTP_USER=${GRAFANA_SMTP_USER}

@@ -35,7 +35,7 @@ These values were chosen to emulate a high-risk region of feature space and push
 
 **Rule**: Fraud Rate Spike
 **Threshold**: fraud rate > 0.5% over a 5-minute window
-**Contact point**: fraud-pipeline-email → nanthansr@gmail.com
+**Contact point**: fraud-pipeline-email → `<your-email>` (configured in `.env`)
 
 ### What a real on-call engineer would do
 
@@ -73,7 +73,7 @@ The model is receiving inputs it was never trained on. In production this does n
 
 **Rule**: Data Drift Warning
 **Threshold**: share of drifted columns > 50%
-**Contact point**: fraud-pipeline-email → nanthansr@gmail.com
+**Contact point**: fraud-pipeline-email → `<your-email>` (configured in `.env`)
 
 ### Remediation steps
 

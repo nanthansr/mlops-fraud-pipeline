@@ -2,10 +2,11 @@
 __pycache__/
 *.py[cod]
 *.egg-info/
-.env
+*.pyc
+
+# Virtual environment
 venv/
 .venv/
-*.pyc
 
 # Data — never commit raw data
 data/raw/*
@@ -15,11 +16,11 @@ data/processed/*
 !data/processed/reference.csv
 
 # Models — tracked by MLflow, not git
-models/
-*.pkl
-*.joblib
-*.pt
-*.h5
+# NOTE: models/model.joblib is explicitly committed for deployment
+models/*.pkl
+models/*.pt
+models/*.h5
+models/metrics.json
 
 # MLflow
 mlruns/
@@ -38,6 +39,8 @@ Thumbs.db
 
 # Secrets — NEVER commit these
 .env
+.env.local
+config.local.yml
 *.pem
 *.key
 aws-credentials
@@ -46,11 +49,15 @@ aws-credentials
 *.log
 logs/
 
-# Personal — not for portfolio repo
-CLAUDE_PROJECT_PROMPT.md
+# Dev session files — local only, not for public repo
+CLAUDE.md
+RAWLOG.md
+SESSIONS.md
+DEVLOG.md
+.claude/
+scripts/devlog.py
 scripts/study_log.py
+CLAUDE_PROJECT_PROMPT.md
 
-# Local config
-.env
-.env.local
-config.local.yml
+# Installers
+AWSCLIV2.pkg

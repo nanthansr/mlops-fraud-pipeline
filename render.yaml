@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: mlops-fraud-api
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: MODEL_PATH
+        value: /app/models/model.joblib
+      - key: MODEL_VERSION
+        value: "0.1.0"

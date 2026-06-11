@@ -9,7 +9,7 @@ xgboost==3.2.0
 pandas==2.2.2
 numpy>=2.0
 joblib==1.5.3
-imbalanced-learn==0.14.1   # SMOTE for class imbalance
+imbalanced-learn==0.14.1
 
 # ── Experiment tracking ──
 mlflow==3.10.1
