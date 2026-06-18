@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Model Observability Demo — Fraud Detection Pipeline</title>
+    <meta name="description" content="Interactive demo of a production ML observability pipeline. Test fraud predictions and see real-time model health monitoring.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: rgba(17, 24, 39, 0.7);
+            --border-color: rgba(99, 102, 241, 0.15);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-indigo: #6366f1;
+            --accent-violet: #8b5cf6;
+            --accent-emerald: #10b981;
+            --accent-rose: #f43f5e;
+            --accent-amber: #f59e0b;
+            --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
+            --gradient-glow: radial-gradient(ellipse at 50% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 60%);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Ambient background glow */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 20%, rgba(99, 102, 241, 0.06) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 80%, rgba(139, 92, 246, 0.04) 0%, transparent 50%);
+            z-index: -1;
+            animation: ambientShift 20s ease-in-out infinite;
+        }
+
+        @keyframes ambientShift {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(-2%, 2%) rotate(1deg); }
+        }
+
+        .container { max-width: 960px; margin: 0 auto; padding: 0 1.5rem; }
+
+        /* ── Hero ── */
+        .hero {
+            padding: 5rem 0 3rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 1rem;
+            border-radius: 100px;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--accent-indigo);
+            margin-bottom: 1.5rem;
+            letter-spacing: 0.02em;
+        }
+
+        .hero-badge .pulse {
+            width: 8px; height: 8px;
+            background: var(--accent-emerald);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            50% { opacity: 0.8; box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+        }
+
+        .hero h1 {
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #f1f5f9 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero h1 em {
+            font-style: normal;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.05rem;
+            color: var(--text-secondary);
+            max-width: 640px;
+            margin: 0 auto 2rem;
+        }
+
+        /* ── Cards ── */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.75rem;
+            backdrop-filter: blur(12px);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(99, 102, 241, 0.3);
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.05);
+        }
+
+        .card-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+
+        /* ── Test Section ── */
+        .test-section { margin-bottom: 2.5rem; }
+
+        .test-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .test-btn {
+            position: relative;
+            padding: 1.25rem 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            text-align: left;
+        }
+
+        .test-btn:hover { transform: translateY(-2px); }
+        .test-btn:active { transform: translateY(0); }
+
+        .test-btn.legit {
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+        .test-btn.legit:hover {
+            background: rgba(16, 185, 129, 0.08);
+            border-color: rgba(16, 185, 129, 0.5);
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.1);
+        }
+
+        .test-btn.fraud {
+            border-color: rgba(244, 63, 94, 0.3);
+        }
+        .test-btn.fraud:hover {
+            background: rgba(244, 63, 94, 0.08);
+            border-color: rgba(244, 63, 94, 0.5);
+            box-shadow: 0 4px 20px rgba(244, 63, 94, 0.1);
+        }
+
+        .test-btn .btn-label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 0.35rem;
+        }
+
+        .test-btn.legit .btn-label { color: var(--accent-emerald); }
+        .test-btn.fraud .btn-label { color: var(--accent-rose); }
+
+        .test-btn .btn-desc {
+            font-size: 0.8rem;
+            font-weight: 400;
+            color: var(--text-secondary);
+        }
+
+        /* ── Result ── */
+        .result-card {
+            display: none;
+            animation: slideUp 0.4s ease;
+        }
+
+        .result-card.visible { display: block; }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .result-verdict {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .result-verdict.legit { color: var(--accent-emerald); }
+        .result-verdict.fraud { color: var(--accent-rose); }
+
+        .confidence-badge {
+            padding: 0.35rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .confidence-badge.legit {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--accent-emerald);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .confidence-badge.fraud {
+            background: rgba(244, 63, 94, 0.1);
+            color: var(--accent-rose);
+            border: 1px solid rgba(244, 63, 94, 0.2);
+        }
+
+        /* Confidence gauge */
+        .gauge-container {
+            margin-bottom: 1.5rem;
+        }
+
+        .gauge-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 100px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+
+        .gauge-fill {
+            height: 100%;
+            border-radius: 100px;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 0;
+        }
+
+        .gauge-fill.legit { background: linear-gradient(90deg, #10b981, #34d399); }
+        .gauge-fill.fraud { background: linear-gradient(90deg, #f43f5e, #fb7185); }
+
+        .gauge-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .result-details {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        .detail-item {
+            text-align: center;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 8px;
+        }
+
+        .detail-item .label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+        }
+
+        .detail-item .value {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        /* ── Loading ── */
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+        }
+
+        .loading-spinner.active { display: block; }
+
+        .spinner {
+            width: 32px; height: 32px;
+            border: 3px solid rgba(99, 102, 241, 0.2);
+            border-top-color: var(--accent-indigo);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 0.75rem;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Model Health ── */
+        .health-section {
+            margin-bottom: 2.5rem;
+        }
+
+        .health-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+        }
+
+        .health-stat {
+            text-align: center;
+            padding: 1.25rem 0.75rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .health-stat .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .health-stat .stat-label {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        /* ── How it works ── */
+        .how-section { margin-bottom: 2.5rem; }
+
+        .pipeline-steps {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .pipeline-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1rem 1.25rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 10px;
+            border-left: 3px solid var(--accent-indigo);
+            transition: background 0.2s ease;
+        }
+
+        .pipeline-step:hover { background: rgba(255, 255, 255, 0.04); }
+
+        .step-num {
+            flex-shrink: 0;
+            width: 28px; height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--accent-indigo);
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .step-content h3 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.2rem;
+        }
+
+        .step-content p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .pipeline-step:nth-child(4) { border-left-color: var(--accent-emerald); }
+        .pipeline-step:nth-child(4) .step-num {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--accent-emerald);
+        }
+        .pipeline-step:nth-child(5) { border-left-color: var(--accent-amber); }
+        .pipeline-step:nth-child(5) .step-num {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--accent-amber);
+        }
+        .pipeline-step:nth-child(6) { border-left-color: var(--accent-rose); }
+        .pipeline-step:nth-child(6) .step-num {
+            background: rgba(244, 63, 94, 0.1);
+            color: var(--accent-rose);
+        }
+
+        /* ── Footer ── */
+        .footer {
+            text-align: center;
+            padding: 3rem 0;
+            border-top: 1px solid var(--border-color);
+            margin-top: 2rem;
+        }
+
+        .footer-links { display: flex; justify-content: center; gap: 1.5rem; margin-bottom: 0.75rem; }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover { color: var(--accent-indigo); }
+
+        .footer p { font-size: 0.75rem; color: var(--text-muted); }
+
+        /* ── Error ── */
+        .error-msg {
+            display: none;
+            padding: 1rem 1.25rem;
+            border-radius: 10px;
+            background: rgba(244, 63, 94, 0.08);
+            border: 1px solid rgba(244, 63, 94, 0.2);
+            color: var(--accent-rose);
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+        }
+
+        .error-msg.visible { display: block; }
+
+        /* ── Responsive ── */
+        @media (max-width: 640px) {
+            .test-buttons { grid-template-columns: 1fr; }
+            .result-details { grid-template-columns: 1fr; }
+            .health-grid { grid-template-columns: 1fr 1fr; }
+            .hero { padding: 3rem 0 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Hero -->
+        <section class="hero" id="hero">
+            <div class="hero-badge">
+                <span class="pulse"></span>
+                Live API
+            </div>
+            <h1>Can your ML pipeline detect when<br><em>its own model goes wrong?</em></h1>
+            <p>This API serves fraud predictions and monitors itself. Every prediction updates real-time metrics — drift detection, confidence tracking, and anomaly alerts catch degradation before it matters.</p>
+        </section>
+
+        <!-- Test Prediction -->
+        <section class="test-section">
+            <div class="card">
+                <div class="card-title">Try a prediction</div>
+
+                <div class="test-buttons">
+                    <button class="test-btn legit" id="btn-legit" onclick="testPrediction('legit')">
+                        <span class="btn-label">Legitimate transaction</span>
+                        <span>$149.62 purchase</span>
+                        <span class="btn-desc">Normal spending pattern</span>
+                    </button>
+                    <button class="test-btn fraud" id="btn-fraud" onclick="testPrediction('fraud')">
+                        <span class="btn-label">Fraudulent transaction</span>
+                        <span>$1.00 test charge</span>
+                        <span class="btn-desc">Suspicious feature pattern</span>
+                    </button>
+                </div>
+
+                <div class="loading-spinner" id="loading">
+                    <div class="spinner"></div>
+                    <span>Running inference...</span>
+                </div>
+
+                <div class="error-msg" id="error"></div>
+
+                <div class="result-card card" id="result">
+                    <div class="result-header">
+                        <span class="result-verdict" id="verdict"></span>
+                        <span class="confidence-badge" id="conf-badge"></span>
+                    </div>
+
+                    <div class="gauge-container">
+                        <div class="gauge-bar">
+                            <div class="gauge-fill" id="gauge-fill"></div>
+                        </div>
+                        <div class="gauge-labels">
+                            <span>0% fraud probability</span>
+                            <span>100%</span>
+                        </div>
+                    </div>
+
+                    <div class="result-details">
+                        <div class="detail-item">
+                            <div class="label">Prediction</div>
+                            <div class="value" id="detail-pred"></div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="label">Confidence</div>
+                            <div class="value" id="detail-conf"></div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="label">Model Version</div>
+                            <div class="value" id="detail-version"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Model Health -->
+        <section class="health-section">
+            <div class="card">
+                <div class="card-title">Live model health</div>
+                <div class="health-grid" id="health-grid">
+                    <div class="health-stat">
+                        <div class="stat-value" id="h-status" style="color: var(--text-muted)">—</div>
+                        <div class="stat-label">Status</div>
+                    </div>
+                    <div class="health-stat">
+                        <div class="stat-value" id="h-total">—</div>
+                        <div class="stat-label">Total Predictions</div>
+                    </div>
+                    <div class="health-stat">
+                        <div class="stat-value" id="h-fraud">—</div>
+                        <div class="stat-label">Fraud Detected</div>
+                    </div>
+                    <div class="health-stat">
+                        <div class="stat-value" id="h-rate">—</div>
+                        <div class="stat-label">Fraud Rate</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- How It Works -->
+        <section class="how-section">
+            <div class="card">
+                <div class="card-title">How the pipeline works</div>
+                <div class="pipeline-steps">
+                    <div class="pipeline-step">
+                        <div class="step-num">1</div>
+                        <div class="step-content">
+                            <h3>Train</h3>
+                            <p>XGBoost on 284K transactions (577:1 imbalance, handled via scale_pos_weight). PR-AUC is the primary metric — not ROC-AUC.</p>
+                        </div>
+                    </div>
+                    <div class="pipeline-step">
+                        <div class="step-num">2</div>
+                        <div class="step-content">
+                            <h3>Register</h3>
+                            <p>MLflow tracks experiments, stores artifacts in S3, and promotes the best model to @champion alias.</p>
+                        </div>
+                    </div>
+                    <div class="pipeline-step">
+                        <div class="step-num">3</div>
+                        <div class="step-content">
+                            <h3>Serve</h3>
+                            <p>FastAPI with typed request schemas. Every prediction emits Prometheus counters and histograms.</p>
+                        </div>
+                    </div>
+                    <div class="pipeline-step">
+                        <div class="step-num">4</div>
+                        <div class="step-content">
+                            <h3>Monitor</h3>
+                            <p>Prometheus scrapes request rate, fraud rate, and confidence distributions. Grafana dashboards visualize trends.</p>
+                        </div>
+                    </div>
+                    <div class="pipeline-step">
+                        <div class="step-num">5</div>
+                        <div class="step-content">
+                            <h3>Detect drift</h3>
+                            <p>Evidently batch job compares live predictions against a reference distribution. Drift metrics go to Pushgateway.</p>
+                        </div>
+                    </div>
+                    <div class="pipeline-step">
+                        <div class="step-num">6</div>
+                        <div class="step-content">
+                            <h3>Alert</h3>
+                            <p>Grafana fires alerts when fraud rate spikes above 3× baseline or more than half of features drift simultaneously.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-links">
+                <a href="https://github.com/nanthansr/mlops-fraud-pipeline" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://www.linkedin.com/in/nanthan-sr/" target="_blank" rel="noopener">LinkedIn</a>
+                <a href="/docs" target="_blank" rel="noopener">API Docs (Swagger)</a>
+            </div>
+            <p>Built by Nanthan Srikumar</p>
+        </footer>
+    </div>
+
+    <script>
+        // API base — use relative path so it works regardless of where this is hosted
+        const API_BASE = window.location.origin;
+
+        // Test transaction feature vectors (real rows from the dataset)
+        const TRANSACTIONS = {
+            legit: {
+                V1: -1.3598071336738, V2: -0.0727811733098497, V3: 2.53634673796914,
+                V4: 1.37815522427443, V5: -0.338320769942518, V6: 0.462387777512959,
+                V7: 0.239598554061257, V8: 0.0986979012610507, V9: 0.363786969611213,
+                V10: 0.0907941719789316, V11: -0.551599533260813, V12: -0.617800855762348,
+                V13: -0.991389847235408, V14: -0.311169353699879, V15: 1.46817697209427,
+                V16: -0.470400525259478, V17: 0.207971241929242, V18: 0.0257905801985591,
+                V19: 0.403992960255733, V20: 0.251412098239705, V21: -0.018306777944153,
+                V22: 0.277837575558899, V23: -0.110473910188767, V24: 0.0669280749146731,
+                V25: 0.128539358273528, V26: -0.189114843888824, V27: 0.133558376740387,
+                V28: -0.0210530534538215, Amount: 149.62
+            },
+            fraud: {
+                V1: -2.3122265423263, V2: 1.95199201064158, V3: -1.60985073229769,
+                V4: 3.9979055875468, V5: -0.522187864667764, V6: -1.42654531920595,
+                V7: -2.53738730624579, V8: 1.39165724829804, V9: -2.77008927719433,
+                V10: -2.77227214465915, V11: 3.20203320709635, V12: -2.89990738849473,
+                V13: -0.595221881324605, V14: -4.28925378244217, V15: 0.389724120274487,
+                V16: -1.14074717980657, V17: -2.83005567450437, V18: -0.0168224681808257,
+                V19: 0.416955705037907, V20: 0.126910559061474, V21: 0.517232370861764,
+                V22: -0.0350493686052974, V23: -0.465211076182388, V24: 0.320198198514526,
+                V25: 0.0445191674731724, V26: 0.177839798284401, V27: 0.261145002567677,
+                V28: -0.143275874698919, Amount: 1.0
+            }
+        };
+
+        async function testPrediction(type) {
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            const error = document.getElementById('error');
+
+            // Reset
+            result.classList.remove('visible');
+            error.classList.remove('visible');
+            loading.classList.add('active');
+
+            // Disable buttons
+            document.getElementById('btn-legit').disabled = true;
+            document.getElementById('btn-fraud').disabled = true;
+
+            try {
+                const resp = await fetch(`${API_BASE}/predict`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(TRANSACTIONS[type])
+                });
+
+                if (!resp.ok) throw new Error(`API returned ${resp.status}`);
+
+                const data = await resp.json();
+                showResult(data);
+                refreshHealth();
+            } catch (err) {
+                error.textContent = `Connection failed: ${err.message}. The API may be starting up — try again in a moment.`;
+                error.classList.add('visible');
+            } finally {
+                loading.classList.remove('active');
+                document.getElementById('btn-legit').disabled = false;
+                document.getElementById('btn-fraud').disabled = false;
+            }
+        }
+
+        function showResult(data) {
+            const result = document.getElementById('result');
+            const verdict = document.getElementById('verdict');
+            const confBadge = document.getElementById('conf-badge');
+            const gaugeFill = document.getElementById('gauge-fill');
+            const isFraud = data.is_fraud;
+            const prob = data.fraud_probability;
+            const cls = isFraud ? 'fraud' : 'legit';
+
+            verdict.textContent = isFraud ? '⚠ Fraud Detected' : '✓ Legitimate';
+            verdict.className = `result-verdict ${cls}`;
+
+            confBadge.textContent = `${(prob * 100).toFixed(1)}% fraud probability`;
+            confBadge.className = `confidence-badge ${cls}`;
+
+            gaugeFill.className = `gauge-fill ${cls}`;
+            // Trigger reflow for animation
+            gaugeFill.style.width = '0';
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    gaugeFill.style.width = `${prob * 100}%`;
+                });
+            });
+
+            document.getElementById('detail-pred').textContent = isFraud ? 'Fraud' : 'Legit';
+            document.getElementById('detail-conf').textContent = `${(prob * 100).toFixed(2)}%`;
+            document.getElementById('detail-version').textContent = data.model_version;
+
+            result.classList.add('visible');
+        }
+
+        async function refreshHealth() {
+            try {
+                const resp = await fetch(`${API_BASE}/metrics/summary`);
+                if (!resp.ok) return;
+                const data = await resp.json();
+
+                const statusEl = document.getElementById('h-status');
+                statusEl.textContent = data.model_loaded ? 'Healthy' : 'No Model';
+                statusEl.style.color = data.model_loaded ? 'var(--accent-emerald)' : 'var(--accent-rose)';
+
+                document.getElementById('h-total').textContent = data.total_predictions.toLocaleString();
+                document.getElementById('h-fraud').textContent = data.fraud_predictions.toLocaleString();
+                document.getElementById('h-rate').textContent = data.total_predictions > 0
+                    ? `${(data.fraud_rate * 100).toFixed(2)}%`
+                    : '—';
+            } catch (e) {
+                // silent — health is best-effort
+            }
+        }
+
+        // Initial health check
+        refreshHealth();
+        // Refresh health every 10s
+        setInterval(refreshHealth, 10000);
+    </script>
+</body>
+</html>

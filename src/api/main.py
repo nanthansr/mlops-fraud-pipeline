@@ -1,8 +1,11 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import BaseModel
 from src.api.monitoring import fraud_predictions_total, prediction_probability, prediction_requests_total
+import pathlib
 import boto3
 import datetime
 import joblib
@@ -12,6 +15,7 @@ import numpy as np
 import os
 import threading
 import uuid
+from pathlib import Path
 from typing import Any
 
 logging.basicConfig(level=logging.INFO)
@@ -20,7 +24,7 @@ logger = logging.getLogger(__name__)
 # ── Model loading ──
 MODEL_PATH = os.getenv("MODEL_PATH", "models/model.joblib")
 MODEL_VERSION = os.getenv("MODEL_VERSION", "0.1.0")
-PREDICTION_LOG_BUCKET = os.getenv("PREDICTION_LOG_BUCKET", "mlops-fraud-pipeline-artifacts-nanthan")
+PREDICTION_LOG_BUCKET = os.getenv("PREDICTION_LOG_BUCKET", "")
 model = None
 last_prediction_timestamp: str | None = None
 total_predictions_count = 0
@@ -47,8 +51,21 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# CORS — allow demo page and external frontends to call the API
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
+)
+
 # Expose /metrics endpoint for Prometheus to scrape
 Instrumentator().instrument(app).expose(app)
+
+# Mount demo page at /demo (static files)
+DEMO_DIR = Path(__file__).resolve().parent.parent.parent / "demo"
+if DEMO_DIR.is_dir():
+    app.mount("/demo", StaticFiles(directory=str(DEMO_DIR), html=True), name="demo")
 
 
 # ── Request / Response schemas ──

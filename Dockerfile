@@ -10,6 +10,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy source code
 COPY src/ ./src/
 
+# Copy demo page
+COPY demo/ ./demo/
+
 # Model gets mounted as a volume in development,
 # baked in for production builds
 COPY models/ ./models/
