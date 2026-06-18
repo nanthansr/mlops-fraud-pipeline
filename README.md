@@ -4,7 +4,7 @@
 ![Python](https://img.shields.io/badge/python-3.11-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.135-009688)
 ![License](https://img.shields.io/badge/license-MIT-green)
-[![Live Demo](https://img.shields.io/badge/Live_Demo-Try_it-6366f1)](https://yieldai-n8n.duckdns.org:8443/demo)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Try_it-6366f1)](https://yieldai-n8n.duckdns.org/fraud-api/demo/)
 
 ML models degrade silently in production. Feature distributions shift, prediction confidence drifts, and by the time someone notices, the model has been wrong for weeks.
 

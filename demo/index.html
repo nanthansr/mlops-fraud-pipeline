@@ -616,15 +616,18 @@
             <div class="footer-links">
                 <a href="https://github.com/nanthansr/mlops-fraud-pipeline" target="_blank" rel="noopener">GitHub</a>
                 <a href="https://www.linkedin.com/in/nanthan-sr/" target="_blank" rel="noopener">LinkedIn</a>
-                <a href="/docs" target="_blank" rel="noopener">API Docs (Swagger)</a>
+                <a id="docs-link" href="/docs" target="_blank" rel="noopener">API Docs (Swagger)</a>
             </div>
             <p>Built by Nanthan Srikumar</p>
         </footer>
     </div>
 
     <script>
-        // API base — use relative path so it works regardless of where this is hosted
-        const API_BASE = window.location.origin;
+        // API base — auto-detect based on current URL path
+        // If served from /fraud-api/demo/, API is at /fraud-api/
+        // If served from /demo/, API is at origin root
+        const pathPrefix = window.location.pathname.startsWith('/fraud-api/') ? '/fraud-api' : '';
+        const API_BASE = window.location.origin + pathPrefix;
 
         // Test transaction feature vectors (real rows from the dataset)
         const TRANSACTIONS = {
@@ -740,6 +743,9 @@
                 // silent — health is best-effort
             }
         }
+
+        // Fix docs link for proxy path
+        document.getElementById('docs-link').href = pathPrefix + '/docs';
 
         // Initial health check
         refreshHealth();
