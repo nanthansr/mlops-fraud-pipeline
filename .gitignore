@@ -54,6 +54,7 @@ CLAUDE.md
 RAWLOG.md
 SESSIONS.md
 DEVLOG.md
+ROADMAP.md
 .claude/
 scripts/devlog.py
 scripts/study_log.py

@@ -129,6 +129,15 @@ python scripts/simulate_incident.py --incident distribution_shift
 ```
 
 See [docs/incident-simulation.md](docs/incident-simulation.md) for detailed incident response documentation.
+## Hosting & Deployed Architecture
+
+The production showcase runs entirely on a single **Oracle Cloud Always Free VM** (ARM-based, 4 OCPUs, 24 GB RAM) for **$0/month total cost**:
+
+- **FastAPI & UI**: Running inside Docker on port 8000. The XGBoost model (`model.joblib`) is loaded into memory on container startup for sub-5ms predictions.
+- **Nginx & SSL (Certbot)**: Manages automatic HTTPS certificates and proxy-routes traffic (`/` -> n8n workflows, `/fraud-api/` -> prediction service).
+- **AWS Components**: Fully decommissioned (S3 logs, ECR registries, ECS Fargate, EC2 telemetry hosts) to prevent active billing charges.
+
+For a detailed visual map of the network routing, local scrapers, and the cloud teardown, see the [Architecture Guide](docs/architecture.md).
 
 ## Things I'd Explain in an Interview
 
