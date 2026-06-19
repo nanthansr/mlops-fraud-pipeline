@@ -419,6 +419,76 @@
             color: var(--accent-rose);
         }
 
+        /* ── Help Box & Header ── */
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+            position: relative;
+        }
+
+        .info-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            padding: 6px;
+            border-radius: 50%;
+        }
+
+        .info-btn:hover, .info-btn.open {
+            color: var(--accent-indigo);
+            background: rgba(99, 102, 241, 0.08);
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.1);
+        }
+
+        .info-icon {
+            width: 20px;
+            height: 20px;
+        }
+
+        .help-box {
+            display: none;
+            padding: 1.25rem;
+            background: rgba(99, 102, 241, 0.03);
+            border: 1px dashed rgba(99, 102, 241, 0.2);
+            border-radius: 10px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            animation: fadeIn 0.25s ease;
+        }
+
+        .help-box.visible {
+            display: block;
+        }
+
+        .help-box p {
+            margin-bottom: 0.75rem;
+            line-height: 1.5;
+        }
+        
+        .help-box p:last-child {
+            margin-bottom: 0;
+        }
+
+        .help-title {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: var(--accent-indigo);
+            margin-bottom: 0.5rem;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         /* ── Editor Section ── */
         .editor-section {
             margin-top: 1.5rem;
@@ -738,18 +808,40 @@
         <!-- Test Prediction -->
         <section class="test-section">
             <div class="card">
-                <div class="card-title">Try a prediction</div>
-
-                <div class="test-buttons">
-                    <button class="test-btn legit" id="btn-legit" onclick="selectPreset('legit')">
-                        <span class="btn-label">Legitimate transaction</span>
-                        <span>$149.62 purchase</span>
-                        <span class="btn-desc">Normal spending pattern</span>
+                <div class="card-header">
+                    <div class="card-title" style="margin-bottom: 0;">Try a prediction</div>
+                    <button class="info-btn" id="btn-info" onclick="toggleHelpInfo()" aria-label="Show help info">
+                        <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                     </button>
-                    <button class="test-btn fraud" id="btn-fraud" onclick="selectPreset('fraud')">
-                        <span class="btn-label">Fraudulent transaction</span>
-                        <span>$1.00 test charge</span>
-                        <span class="btn-desc">Suspicious feature pattern</span>
+                </div>
+
+                <div class="help-box" id="help-box">
+                    <div class="help-title">How does this model evaluate risk?</div>
+                    <p>Machine learning models look at the <strong>combination of behaviors</strong> rather than a single metric like the dollar amount. The 28 PCA variables (V1–V28) capture transaction context such as merchant matching, card behavior velocity, and device security indicators.</p>
+                    <p>💡 <strong>The Concept:</strong> Dollar amounts are not inherently fraudulent. High values (e.g., $1,299.00) can be legitimate if the context is normal. Conversely, low values (e.g., $1.00) can be highly suspicious if device or velocity markers fail.</p>
+                    <p>🔧 <strong>Try it:</strong> Load <strong>Legitimate Preset 2</strong> ($1,299.00) and run prediction. Then, load <strong>Fraudulent Preset 1</strong> ($1.00) and run. You'll see that V-features carry the real prediction weight. Customize the Amount or toggle <strong>Advanced PCA Features</strong> below to experiment!</p>
+                </div>
+
+                <div class="test-buttons" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                    <button class="test-btn legit" id="btn-legit_standard" onclick="selectPreset('legit_standard')">
+                        <span class="btn-label">Legitimate preset 1</span>
+                        <span>$45.20 Groceries</span>
+                        <span class="btn-desc">Standard household spend</span>
+                    </button>
+                    <button class="test-btn legit" id="btn-legit_high" onclick="selectPreset('legit_high')">
+                        <span class="btn-label">Legitimate preset 2</span>
+                        <span>$1,299.00 Laptop</span>
+                        <span class="btn-desc">High-value tech purchase</span>
+                    </button>
+                    <button class="test-btn fraud" id="btn-fraud_test" onclick="selectPreset('fraud_test')">
+                        <span class="btn-label">Fraudulent preset 1</span>
+                        <span>$1.00 Card Test</span>
+                        <span class="btn-desc">Suspicious signature check</span>
+                    </button>
+                    <button class="test-btn fraud" id="btn-fraud_drain" onclick="selectPreset('fraud_drain')">
+                        <span class="btn-label">Fraudulent preset 2</span>
+                        <span>$950.00 Cash Drain</span>
+                        <span class="btn-desc">High-risk feature combination</span>
                     </button>
                 </div>
 
@@ -917,8 +1009,8 @@
         const pathPrefix = window.location.pathname.startsWith('/fraud-api/') ? '/fraud-api' : '';
         const API_BASE = window.location.origin + pathPrefix;
 
-        // Test transaction feature vectors (real rows from the dataset)
-        const TRANSACTIONS = {
+        // Base PCA behavior matrices from real dataset rows
+        const PCA_BASE = {
             legit: {
                 V1: -1.3598071336738, V2: -0.0727811733098497, V3: 2.53634673796914,
                 V4: 1.37815522427443, V5: -0.338320769942518, V6: 0.462387777512959,
@@ -929,7 +1021,7 @@
                 V19: 0.403992960255733, V20: 0.251412098239705, V21: -0.018306777944153,
                 V22: 0.277837575558899, V23: -0.110473910188767, V24: 0.0669280749146731,
                 V25: 0.128539358273528, V26: -0.189114843888824, V27: 0.133558376740387,
-                V28: -0.0210530534538215, Amount: 149.62
+                V28: -0.0210530534538215
             },
             fraud: {
                 V1: -2.3122265423263, V2: 1.95199201064158, V3: -1.60985073229769,
@@ -941,13 +1033,21 @@
                 V19: 0.416955705037907, V20: 0.126910559061474, V21: 0.517232370861764,
                 V22: -0.0350493686052974, V23: -0.465211076182388, V24: 0.320198198514526,
                 V25: 0.0445191674731724, V26: 0.177839798284401, V27: 0.261145002567677,
-                V28: -0.143275874698919, Amount: 1.0
+                V28: -0.143275874698919
             }
         };
 
+        // Complete 4 preset configurations mapping values & text descriptions
+        const TRANSACTIONS = {
+            legit_standard: { ...PCA_BASE.legit, Amount: 45.20 },
+            legit_high: { ...PCA_BASE.legit, Amount: 1299.00 },
+            fraud_test: { ...PCA_BASE.fraud, Amount: 1.00 },
+            fraud_drain: { ...PCA_BASE.fraud, Amount: 950.00 }
+        };
+
         // Current working transaction values
-        let currentTransaction = { ...TRANSACTIONS.legit };
-        let activePreset = 'legit';
+        let currentTransaction = { ...TRANSACTIONS.legit_standard };
+        let activePreset = 'legit_standard';
         let advancedVisible = false;
 
         function initializeAdvancedGrid() {
@@ -991,9 +1091,11 @@
             activePreset = type;
             currentTransaction = { ...TRANSACTIONS[type] };
 
-            // Update preset button styles
-            document.getElementById('btn-legit').classList.toggle('selected', type === 'legit');
-            document.getElementById('btn-fraud').classList.toggle('selected', type === 'fraud');
+            // Update preset button styles (toggling active highlight)
+            Object.keys(TRANSACTIONS).forEach(k => {
+                const btn = document.getElementById(`btn-${k}`);
+                if (btn) btn.classList.toggle('selected', k === type);
+            });
 
             // Sync inputs
             document.getElementById('amount-input').value = currentTransaction.Amount.toFixed(2);
@@ -1045,8 +1147,10 @@
         }
 
         function deselectPresets() {
-            document.getElementById('btn-legit').classList.remove('selected');
-            document.getElementById('btn-fraud').classList.remove('selected');
+            Object.keys(TRANSACTIONS).forEach(k => {
+                const btn = document.getElementById(`btn-${k}`);
+                if (btn) btn.classList.remove('selected');
+            });
         }
 
         function toggleAdvancedFeatures() {
@@ -1062,19 +1166,28 @@
                 : 'Show Advanced PCA Features (V1 - V28)';
         }
 
+        function toggleHelpInfo() {
+            const box = document.getElementById('help-box');
+            const btn = document.getElementById('btn-info');
+            box.classList.toggle('visible');
+            btn.classList.toggle('open');
+        }
+
         async function runInference() {
             const loading = document.getElementById('loading');
             const result = document.getElementById('result');
             const error = document.getElementById('error');
 
-            // Reset
+            // Reset UI states
             result.classList.remove('visible');
             error.classList.remove('visible');
             loading.classList.add('active');
 
             // Disable buttons
-            document.getElementById('btn-legit').disabled = true;
-            document.getElementById('btn-fraud').disabled = true;
+            Object.keys(TRANSACTIONS).forEach(k => {
+                const btn = document.getElementById(`btn-${k}`);
+                if (btn) btn.disabled = true;
+            });
             document.getElementById('btn-run').disabled = true;
 
             try {
@@ -1094,8 +1207,10 @@
                 error.classList.add('visible');
             } finally {
                 loading.classList.remove('active');
-                document.getElementById('btn-legit').disabled = false;
-                document.getElementById('btn-fraud').disabled = false;
+                Object.keys(TRANSACTIONS).forEach(k => {
+                    const btn = document.getElementById(`btn-${k}`);
+                    if (btn) btn.disabled = false;
+                });
                 document.getElementById('btn-run').disabled = false;
             }
         }
@@ -1157,7 +1272,7 @@
         // Initialize UI elements on load
         window.addEventListener('DOMContentLoaded', () => {
             initializeAdvancedGrid();
-            selectPreset('legit', false); // Visually select 'legit' on load without triggering network request
+            selectPreset('legit_standard', false); // Visually select legit standard without triggering prediction on load
             refreshHealth();
         });
 
