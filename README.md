@@ -4,7 +4,6 @@
 ![Python](https://img.shields.io/badge/python-3.11-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.135-009688)
 ![License](https://img.shields.io/badge/license-MIT-green)
-[![Live Demo](https://img.shields.io/badge/Live_Demo-Try_it-6366f1)](https://yieldai-n8n.duckdns.org/fraud-api/demo/)
 
 ML models degrade silently in production. Feature distributions shift, prediction confidence drifts, and by the time someone notices, the model has been wrong for weeks.
 
@@ -14,23 +13,16 @@ The fraud detection model is the vehicle. The observability stack is the point.
 
 ## How It Works
 
-```mermaid
-graph LR
-    A[Kaggle Dataset] --> B[Feature Engineering]
-    B --> C[XGBoost Model]
-    C --> D[MLflow Registry]
-    D --> E[FastAPI Service]
-    E --> F[GitHub Actions CI/CD]
-    E --> G[Prometheus]
-    F --> H[Docker Deploy]
-    G --> I[Grafana Dashboard]
-    I --> J[Drift Detection]
-    J --> K[Email Alert]
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/img/architecture-dark.svg">
+  <img alt="Three lanes. Train: a Kaggle dataset of 284,807 transactions goes through XGBoost with scale_pos_weight 577 into an MLflow registry under a champion alias. Serve: a transaction hits FastAPI for schema validation, then the model held in memory, returning a score in 2 to 5 milliseconds; the registry promotes a new model without a redeploy. Watch: Evidently runs a scheduled drift check into a Pushgateway, Prometheus and Grafana rules read it alongside per-prediction counters from FastAPI, and an alert fires by email." src="docs/img/architecture-light.svg">
+</picture>
 
-**Inference path**: Transaction → FastAPI validates schema → XGBoost predicts → Prometheus counters increment → result returned in ~2ms.
+**Inference path**: Transaction → FastAPI validates schema → XGBoost predicts → Prometheus counters increment → result returned in 2–5ms.
 
-**Monitoring path**: Prometheus scrapes metrics → Grafana evaluates rules → batch Evidently drift check pushes to Pushgateway → alert fires on fraud spike or feature drift.
+**Monitoring path**: Prometheus scrapes per-prediction counters directly. The Evidently drift job is short-lived, so it pushes through a Pushgateway instead. Grafana evaluates rules over both and fires on a fraud spike or feature drift.
+
+> **Live demo:** currently offline. The public endpoint sat behind auth and returned 401, so it has been removed from this README rather than left as a dead link. A Hugging Face Space is replacing it; until then, `docker compose up --build` below runs the whole stack locally in one command.
 
 ## Project Structure
 

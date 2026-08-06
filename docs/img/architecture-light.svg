@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" width="900" height="400" role="img" aria-label="Three lanes. Train: a Kaggle dataset of 284,807 transactions goes through XGBoost with scale_pos_weight 577 into an MLflow registry under a champion alias. Serve: a transaction hits FastAPI for schema validation, then the model held in memory, returning a score in 2 to 5 milliseconds; the registry promotes a new model without a redeploy. Watch: Evidently runs a scheduled drift check into a Pushgateway, Prometheus and Grafana rules read it alongside per-prediction counters from FastAPI, and an alert fires by email.">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#8c959f"/></marker></defs>
+<rect width="900" height="400" fill="#ffffff"/>
+<rect x="0" y="8" width="900" height="108" rx="8" fill="#f6f8fa"/>
+<text x="16" y="28" text-anchor="start" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="10" font-weight="600" fill="#a0a8b0" letter-spacing="1.4">TRAIN</text>
+<rect x="0" y="126" width="900" height="108" rx="8" fill="#f6f8fa"/>
+<text x="16" y="146" text-anchor="start" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="10" font-weight="600" fill="#a0a8b0" letter-spacing="1.4">SERVE</text>
+<rect x="0" y="244" width="900" height="148" rx="8" fill="#f6f8fa"/>
+<text x="16" y="264" text-anchor="start" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="10" font-weight="600" fill="#a0a8b0" letter-spacing="1.4">WATCH</text>
+<rect x="96" y="40" width="168" height="46" rx="6" fill="#ffffff" stroke="#d0d7de" stroke-width="1"/>
+<text x="180.0" y="56.0" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,sans-serif" font-size="12" font-weight="600" fill="#1f2328">Kaggle dataset</text>
+<text x="180.0" y="70.0" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,sans-serif" font-size="10.5" font-weight="400" fill="#656d76">284,807 txns · 0.17% fraud</text>
+<rect x="320" y="40" width="150" height="46" rx="6" fill="#ffffff" stroke="#d0d7de" stroke-width="1"/>
+<text x="395.0" y="56.0" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,sans-serif" font-size="12" font-weight="600" fill="#1f2328">XGBoost</text>
+<text x="395.0" y="70.0" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="10" font-weight="400" fill="#656d76">scale_pos_weight=577</text>
+<rect x="534" y="40" width="150" height="46" rx="6" fill="#ffffff" stroke="#d0d7de" stroke-width="1"/>
+<text x="609.0" y="56.0" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,sans-serif" font-size="12" font-weight="600" fill="#1f2328">MLflow registry</text>
+<text x="609.0" y="70.0" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="10" font-weight="400" fill="#656d76">@champion alias</text>
+<rect x="96" y="158" width="168" height="46" rx="6" fill="#ffffff" stroke="#d0d7de" stroke-width="1"/>
+<text x="180.0" y="174.0" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,sans-serif" font-size="12" font-weight="600" fill="#1f2328">Transaction</text>
+<text x="180.0" y="188.0" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,sans-serif" font-size="10.5" font-weight="400" fill="#656d76">V1–V28 + amount</text>
+<rect x="320" y="158" width="150" height="46" rx="6" fill="#ffffff" stroke="#d0d7de" stroke-width="1"/>
+<text x="395.0" y="174.0" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,sans-serif" font-size="12" font-weight="600" fill="#1f2328">FastAPI</text>
+<text x="395.0" y="188.0" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,sans-serif" font-size="10.5" font-weight="400" fill="#656d76">schema validation</text>
+<rect x="534" y="158" width="150" height="46" rx="6" fill="#fff4ec" stroke="#e8b48c" stroke-width="1"/>
+<text x="609.0" y="174.0" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,sans-serif" font-size="12" font-weight="600" fill="#bd5d1f">Model in memory</text>
+<text x="609.0" y="188.0" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,sans-serif" font-size="10.5" font-weight="400" fill="#656d76">2–5 ms per call</text>
+<rect x="748" y="158" width="110" height="46" rx="6" fill="#ffffff" stroke="#d0d7de" stroke-width="1"/>
+<text x="803.0" y="174.0" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,sans-serif" font-size="12" font-weight="600" fill="#1f2328">Score</text>
+<text x="803.0" y="188.0" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,sans-serif" font-size="10.5" font-weight="400" fill="#656d76">fraud / legit</text>
+<rect x="96" y="282" width="168" height="46" rx="6" fill="#ffffff" stroke="#d0d7de" stroke-width="1"/>
+<text x="180.0" y="298.0" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,sans-serif" font-size="12" font-weight="600" fill="#1f2328">Evidently</text>
+<text x="180.0" y="312.0" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,sans-serif" font-size="10.5" font-weight="400" fill="#656d76">scheduled drift check</text>
+<rect x="320" y="282" width="150" height="46" rx="6" fill="#ffffff" stroke="#d0d7de" stroke-width="1"/>
+<text x="395.0" y="298.0" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,sans-serif" font-size="12" font-weight="600" fill="#1f2328">Pushgateway</text>
+<text x="395.0" y="312.0" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,sans-serif" font-size="10.5" font-weight="400" fill="#656d76">short-lived job</text>
+<rect x="534" y="282" width="150" height="46" rx="6" fill="#ffffff" stroke="#d0d7de" stroke-width="1"/>
+<text x="609.0" y="298.0" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,sans-serif" font-size="12" font-weight="600" fill="#1f2328">Prometheus</text>
+<text x="609.0" y="312.0" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,sans-serif" font-size="10.5" font-weight="400" fill="#656d76">+ Grafana rules</text>
+<rect x="748" y="282" width="110" height="46" rx="6" fill="#fff4ec" stroke="#e8b48c" stroke-width="1"/>
+<text x="803.0" y="298.0" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,sans-serif" font-size="12" font-weight="600" fill="#bd5d1f">Alert fires</text>
+<text x="803.0" y="312.0" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,sans-serif" font-size="10.5" font-weight="400" fill="#656d76">email</text>
+<path d="M 264 63 L 316 63" stroke="#8c959f" stroke-width="1.4" fill="none" marker-end="url(#a)"/>
+<path d="M 470 63 L 530 63" stroke="#8c959f" stroke-width="1.4" fill="none" marker-end="url(#a)"/>
+<path d="M 264 181 L 316 181" stroke="#8c959f" stroke-width="1.4" fill="none" marker-end="url(#a)"/>
+<path d="M 470 181 L 530 181" stroke="#8c959f" stroke-width="1.4" fill="none" marker-end="url(#a)"/>
+<path d="M 684 181 L 744 181" stroke="#8c959f" stroke-width="1.4" fill="none" marker-end="url(#a)"/>
+<path d="M 609 86 L 609 154" stroke="#8c959f" stroke-width="1.4" fill="none" marker-end="url(#a)" stroke-dasharray="4 3"/>
+<path d="M 264 305 L 316 305" stroke="#8c959f" stroke-width="1.4" fill="none" marker-end="url(#a)"/>
+<path d="M 470 305 L 530 305" stroke="#8c959f" stroke-width="1.4" fill="none" marker-end="url(#a)"/>
+<path d="M 684 305 L 744 305" stroke="#8c959f" stroke-width="1.4" fill="none" marker-end="url(#a)"/>
+<path d="M 395 204 L 395 262 L 609 262 L 609 278" stroke="#8c959f" stroke-width="1.4" fill="none" marker-end="url(#a)" stroke-dasharray="4 3"/>
+<text x="500" y="56" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="10" font-weight="400" fill="#656d76">PR-AUC</text>
+<text x="619" y="119" text-anchor="start" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="10" font-weight="400" fill="#656d76">promote, no redeploy</text>
+<text x="403" y="226" text-anchor="start" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="10" font-weight="400" fill="#656d76">counters on every prediction</text>
+<text x="96" y="348" font-family="system-ui,-apple-system,Segoe UI,sans-serif" font-size="11" fill="#656d76"><tspan fill="#bd5d1f" font-weight="600">simulate_incident.py</tspan> replays a fraud spike and a distribution shift, so the alert path is tested, not assumed.</text>
+</svg>
